@@ -7,16 +7,17 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "clean": "tsx scripts/clean-all-data.ts"
   },
   "dependencies": {
     "@creit.tech/stellar-wallets-kit": "^1.9.5",
     "@stellar/stellar-sdk": "^11.2.2",
     "@vercel/blob": "^0.19.0",
-    "@vercel/kv": "^0.2.0",
     "next": "14.2.0",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
+    "redis": "^5.10.0",
     "uuid": "^9.0.1"
   },
   "devDependencies": {
@@ -29,6 +30,7 @@
     "eslint-config-next": "14.2.0",
     "postcss": "^8.4.33",
     "tailwindcss": "^3.4.1",
+    "tsx": "^4.21.0",
     "typescript": "^5.3.3"
   }
 }

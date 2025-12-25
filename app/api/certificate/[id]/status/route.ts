@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCertificate, updateCertificateStatus } from '@/lib/db'
-import { isValidator } from '@/lib/validators'
 import { validateStellarAddress } from '@/lib/stellar'
+import { approveCertificateOnContract, rejectCertificateOnContract } from '@/lib/soroban'
+import { Keypair } from '@stellar/stellar-sdk'
+
+// Admin address del Smart Contract
+const ADMIN_ADDRESS = process.env.ADMIN_PUBLIC_KEY || 'GALR6D6JTE2C554HD2OOW5CDMUYBYZ43S4VLWPDAMJFLSF2GQW5GLCT3'
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
     const body = await request.json()
     const { status, validatorWallet, reason } = body
 
@@ -22,16 +26,15 @@ export async function PUT(
 
     if (!validatorWallet || !validateStellarAddress(validatorWallet)) {
       return NextResponse.json(
-        { success: false, error: 'Valid validator wallet address is required' },
+        { success: false, error: 'Valid admin wallet address is required' },
         { status: 400 }
       )
     }
 
-    // Verificar que es validador
-    const isVal = await isValidator(validatorWallet)
-    if (!isVal) {
+    // Verificar que es admin del Smart Contract
+    if (validatorWallet !== ADMIN_ADDRESS) {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized: Wallet is not a validator' },
+        { success: false, error: 'Unauthorized: Wallet is not the admin of the Smart Contract' },
         { status: 403 }
       )
     }
@@ -53,7 +56,33 @@ export async function PUT(
       )
     }
 
-    // Actualizar estado
+    // NUEVO: Actualizar en Smart Contract primero
+    // Usar ADMIN_SECRET_KEY si está configurada, sino usar STELLAR_SECRET_KEY
+    const adminSecretKey = process.env.ADMIN_SECRET_KEY || process.env.STELLAR_SECRET_KEY!
+    const adminKeypair = Keypair.fromSecret(adminSecretKey)
+    
+    try {
+      // Convertir hash a formato correcto (32 bytes = 64 hex chars)
+      const fileHash = certificate.hash.length === 64 
+        ? certificate.hash 
+        : certificate.hash.padStart(64, '0').substring(0, 64)
+
+      if (status === 'approved') {
+        await approveCertificateOnContract(fileHash, adminKeypair)
+      } else {
+        await rejectCertificateOnContract(
+          fileHash,
+          reason || 'Rejected by admin',
+          adminKeypair
+        )
+      }
+    } catch (contractError: any) {
+      console.error('Error updating certificate in contract:', contractError)
+      // No fallar si el contrato falla, pero loguear
+      // En producción, decidir si esto debe ser crítico
+    }
+
+    // Actualizar estado en Redis (para queries rápidas y cache)
     const updated = await updateCertificateStatus(
       id,
       status,

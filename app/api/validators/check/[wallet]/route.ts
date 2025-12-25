@@ -4,10 +4,10 @@ import { validateStellarAddress } from '@/lib/stellar'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { wallet: string } }
+  { params }: { params: Promise<{ wallet: string }> }
 ) {
   try {
-    const { wallet } = params
+    const { wallet } = await params
 
     if (!validateStellarAddress(wallet)) {
       return NextResponse.json(

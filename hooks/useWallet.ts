@@ -97,6 +97,9 @@ export const useWallet = () => {
         walletId: 'freighter',
         connected: true
       }))
+
+      // Recargar la página para actualizar los datos
+      window.location.reload()
     } catch (error: any) {
       setWalletState(prev => ({
         ...prev,

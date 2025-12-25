@@ -19,11 +19,10 @@ export default function RootLayout({
     <html lang="es">
       <body className={inter.className}>
         <Navbar />
-        <main className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+        <main className="min-h-screen">
           {children}
         </main>
       </body>
     </html>
   )
 }
-

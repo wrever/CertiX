@@ -15,14 +15,21 @@ export interface Certificate {
   validatedAt?: string
   validatorWallet?: string
   rejectionReason?: string
+  contractId?: string // ID del Smart Contract Soroban
 }
 
 export interface CertificateUploadResponse {
   success: boolean
   certificateId: string
   txHash: string
+  txXdr?: string // XDR para que el usuario lo firme
   hash: string
-  stellarExplorerUrl: string
+  fileUrl?: string // URL del archivo subido (necesario para guardar después)
+  title?: string // Título del certificado (necesario para guardar después)
+  issuer?: string // Emisor del certificado (opcional)
+  stellarExplorerUrl?: string
+  needsSignature?: boolean // Indica que necesita firma del usuario
+  status?: CertificateStatus
   error?: string
 }
 

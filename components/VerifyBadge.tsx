@@ -6,8 +6,8 @@ interface VerifyBadgeProps {
 export default function VerifyBadge({ isValid, verifying = false }: VerifyBadgeProps) {
   if (verifying) {
     return (
-      <div className="inline-flex items-center px-3 py-1 bg-yellow-100 border border-yellow-400 text-yellow-800 rounded text-sm">
-        <span className="mr-1">⏳</span>
+      <div className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-yellow-400 to-amber-400 text-white rounded-lg text-xs font-bold shadow-md">
+        <span className="mr-1.5 animate-spin">⏳</span>
         Verificando...
       </div>
     )
@@ -15,18 +15,17 @@ export default function VerifyBadge({ isValid, verifying = false }: VerifyBadgeP
 
   if (isValid) {
     return (
-      <div className="inline-flex items-center px-3 py-1 bg-green-100 border border-green-400 text-green-800 rounded text-sm">
-        <span className="mr-1">✅</span>
-        Verificado en Blockchain
+      <div className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg text-xs font-bold shadow-md">
+        <span className="mr-1.5">✅</span>
+        Verificado
       </div>
     )
   }
 
   return (
-    <div className="inline-flex items-center px-3 py-1 bg-red-100 border border-red-400 text-red-800 rounded text-sm">
-      <span className="mr-1">❌</span>
+    <div className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-gray-400 to-gray-500 text-white rounded-lg text-xs font-bold shadow-md">
+      <span className="mr-1.5">❌</span>
       No Verificado
     </div>
   )
 }
-

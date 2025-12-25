@@ -8,6 +8,15 @@ import WalletConnect from './WalletConnect'
 export default function Navbar() {
   const { address, isConnected } = useWallet()
   const [isValidator, setIsValidator] = useState(false)
+  const [isScrolled, setIsScrolled] = useState(false)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10)
+    }
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   useEffect(() => {
     if (isConnected && address) {
@@ -21,33 +30,40 @@ export default function Navbar() {
     if (!address) return
     
     try {
-      const res = await fetch(`/api/validators/check/${address}`)
+      const res = await fetch(`/api/admin/check?wallet=${address}`)
       const data = await res.json()
-      setIsValidator(data.success && data.isValidator)
+      setIsValidator(data.success && data.isAdmin)
     } catch (err) {
       setIsValidator(false)
     }
   }
 
   return (
-    <nav className="bg-white shadow-lg">
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      isScrolled 
+        ? 'glass shadow-lg backdrop-blur-xl' 
+        : 'bg-transparent'
+    }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          <div className="flex items-center space-x-8">
-            <Link href="/" className="text-xl font-bold text-primary-600">
+        <div className="flex justify-between items-center h-20">
+          <div className="flex items-center space-x-10">
+            <Link 
+              href="/" 
+              className="text-2xl font-bold gradient-text hover:scale-105 transition-transform duration-200"
+            >
               CertiX
             </Link>
-            <div className="hidden md:flex space-x-4">
+            <div className="hidden md:flex space-x-1">
               <Link
                 href="/upload"
-                className="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium"
+                className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50/50 transition-all duration-200"
               >
                 Subir
               </Link>
               {isConnected && (
                 <Link
                   href="/my-certificates"
-                  className="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium"
+                  className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50/50 transition-all duration-200"
                 >
                   Mis Certificados
                 </Link>
@@ -55,9 +71,9 @@ export default function Navbar() {
               {isValidator && (
                 <Link
                   href="/validator/dashboard"
-                  className="text-purple-700 hover:text-purple-600 px-3 py-2 rounded-md text-sm font-medium font-semibold"
+                  className="px-4 py-2 rounded-lg text-sm font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 transition-all duration-200 shadow-sm"
                 >
-                  Dashboard Validador
+                  🛡️ Dashboard Admin
                 </Link>
               )}
             </div>
@@ -70,4 +86,3 @@ export default function Navbar() {
     </nav>
   )
 }
-

@@ -45,40 +45,36 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Generar hash
+    // Generar hash (necesitamos el buffer del archivo)
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
     const hash = generateHash(buffer)
 
-    // Subir archivo
+    // Subir archivo a Vercel Blob
     const fileUrl = await uploadFile(file, walletAddress)
 
-    // Crear transacción Stellar
+    // Crear transacción Stellar (sin firmar - el usuario la firmará)
     const { txXdr, txHash } = await createCertificateTransaction(hash, walletAddress)
-    const finalTxHash = await sendTransaction(txXdr)
 
-    // Guardar en DB
+    // Generar ID del certificado (se guardará solo después de que la transacción sea exitosa)
     const certificateId = uuidv4()
-    await saveCertificate({
-      id: certificateId,
-      walletAddress,
-      title: title.trim(),
-      hash,
-      txHash: finalTxHash,
-      fileUrl,
-      issuer: issuer?.trim() || undefined,
-      status: 'pending',
-      isValid: false,
-      uploadedAt: new Date().toISOString(),
-    })
 
+    // NO guardar en DB todavía - solo se guardará después de que la transacción sea exitosa
+    // Guardar temporalmente en memoria o usar el hash como referencia
+    // Por ahora, solo devolvemos los datos necesarios para la firma
+
+    // Devolver el XDR para que el usuario lo firme
     return NextResponse.json({
       success: true,
       certificateId,
-      txHash: finalTxHash,
+      txXdr, // XDR para que el usuario lo firme
+      txHash, // Hash previo para referencia
       hash,
-      stellarExplorerUrl: getStellarExplorerUrl(finalTxHash),
-      status: 'pending'
+      fileUrl, // Necesario para guardar después
+      title: title.trim(),
+      issuer: issuer?.trim() || undefined,
+      status: 'pending',
+      needsSignature: true // Indicar que necesita firma
     })
   } catch (error: any) {
     console.error('Error uploading certificate:', error)

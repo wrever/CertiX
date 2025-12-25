@@ -1,40 +1,66 @@
-import { kv } from '@vercel/kv'
+import { getRedisClient } from './redis-client'
 import { Certificate, CertificateStatus, CertificateStats } from '@/types/certificate'
 
 export async function saveCertificate(certificate: Certificate): Promise<void> {
-  // Guardar certificado individual
-  await kv.set(`cert:${certificate.id}`, certificate)
-  
-  // Guardar en lista de certificados del usuario
-  await kv.lpush(`user:${certificate.walletAddress}:certs`, certificate.id)
-  
-  // Guardar en lista por estado
-  await kv.lpush(`user:${certificate.walletAddress}:status:${certificate.status}`, certificate.id)
-  
-  // Guardar en lista global por estado (para validadores)
-  await kv.lpush(`status:${certificate.status}`, certificate.id)
+  try {
+    const client = await getRedisClient()
+    
+    // Validar que el certificado tenga todos los campos requeridos
+    if (!certificate.id || !certificate.walletAddress || !certificate.hash || !certificate.txHash) {
+      throw new Error('Certificate missing required fields')
+    }
+    
+    // Guardar certificado individual
+    await client.set(`cert:${certificate.id}`, JSON.stringify(certificate))
+    
+    // Verificar si ya existe en las listas antes de agregar (evitar duplicados)
+    const userCerts = await client.lRange(`user:${certificate.walletAddress}:certs`, 0, -1)
+    if (!userCerts.includes(certificate.id)) {
+      await client.lPush(`user:${certificate.walletAddress}:certs`, certificate.id)
+    }
+    
+    const userStatusCerts = await client.lRange(`user:${certificate.walletAddress}:status:${certificate.status}`, 0, -1)
+    if (!userStatusCerts.includes(certificate.id)) {
+      await client.lPush(`user:${certificate.walletAddress}:status:${certificate.status}`, certificate.id)
+    }
+    
+    const globalStatusCerts = await client.lRange(`status:${certificate.status}`, 0, -1)
+    if (!globalStatusCerts.includes(certificate.id)) {
+      await client.lPush(`status:${certificate.status}`, certificate.id)
+    }
+  } catch (error: any) {
+    console.error('Error in saveCertificate:', error)
+    throw error
+  }
 }
 
 export async function getCertificate(id: string): Promise<Certificate | null> {
-  return await kv.get(`cert:${id}`)
+  const client = await getRedisClient()
+  const data = await client.get(`cert:${id}`)
+  if (!data) return null
+  return JSON.parse(data) as Certificate
 }
 
 export async function getUserCertificates(
   walletAddress: string, 
-  status?: CertificateStatus
+  status?: CertificateStatus | 'all'
 ): Promise<Certificate[]> {
+  const client = await getRedisClient()
   let certIds: string[]
   
-  if (status) {
-    certIds = await kv.lrange(`user:${walletAddress}:status:${status}`, 0, -1) as string[]
+  if (status && status !== 'all') {
+    certIds = await client.lRange(`user:${walletAddress}:status:${status}`, 0, -1)
   } else {
-    certIds = await kv.lrange(`user:${walletAddress}:certs`, 0, -1) as string[]
+    certIds = await client.lRange(`user:${walletAddress}:certs`, 0, -1)
   }
   
   if (!certIds || certIds.length === 0) return []
   
+  // Eliminar duplicados usando Set
+  const uniqueIds = Array.from(new Set(certIds))
+  
   const certificates = await Promise.all(
-    certIds.map(id => kv.get<Certificate>(`cert:${id}`))
+    uniqueIds.map(id => getCertificate(id))
   )
   return certificates.filter(Boolean) as Certificate[]
 }
@@ -59,28 +85,40 @@ export async function updateCertificateStatus(
   }
   
   // Guardar actualizado
-  await kv.set(`cert:${id}`, certificate)
+  await saveCertificate(certificate)
   
   // Actualizar listas por estado
   if (oldStatus !== status) {
+    const client = await getRedisClient()
     // Remover de lista anterior
-    await kv.lrem(`user:${certificate.walletAddress}:status:${oldStatus}`, 0, id)
-    await kv.lrem(`status:${oldStatus}`, 0, id)
+    await client.lRem(`user:${certificate.walletAddress}:status:${oldStatus}`, 0, id)
+    await client.lRem(`status:${oldStatus}`, 0, id)
     
-    // Agregar a lista nueva
-    await kv.lpush(`user:${certificate.walletAddress}:status:${status}`, id)
-    await kv.lpush(`status:${status}`, id)
+    // Verificar si ya existe antes de agregar a lista nueva (evitar duplicados)
+    const newUserStatusCerts = await client.lRange(`user:${certificate.walletAddress}:status:${status}`, 0, -1)
+    if (!newUserStatusCerts.includes(id)) {
+      await client.lPush(`user:${certificate.walletAddress}:status:${status}`, id)
+    }
+    
+    const newGlobalStatusCerts = await client.lRange(`status:${status}`, 0, -1)
+    if (!newGlobalStatusCerts.includes(id)) {
+      await client.lPush(`status:${status}`, id)
+    }
   }
   
   return certificate
 }
 
 export async function getCertificatesByStatus(status: CertificateStatus): Promise<Certificate[]> {
-  const certIds = await kv.lrange(`status:${status}`, 0, -1) as string[]
+  const client = await getRedisClient()
+  const certIds = await client.lRange(`status:${status}`, 0, -1)
   if (!certIds || certIds.length === 0) return []
   
+  // Eliminar duplicados usando Set
+  const uniqueIds = Array.from(new Set(certIds))
+  
   const certificates = await Promise.all(
-    certIds.map(id => kv.get<Certificate>(`cert:${id}`))
+    uniqueIds.map(id => getCertificate(id))
   )
   return certificates.filter(Boolean) as Certificate[]
 }
@@ -95,4 +133,3 @@ export async function getCertificateStats(walletAddress: string): Promise<Certif
     rejected: allCerts.filter(c => c.status === 'rejected').length,
   }
 }
-

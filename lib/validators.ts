@@ -1,12 +1,14 @@
-import { kv } from '@vercel/kv'
+import { getRedisClient } from './redis-client'
 
 const VALIDATORS_KEY = 'validators:list'
 
 // Obtener lista de validadores
 export async function getValidators(): Promise<string[]> {
   try {
-    const validators = await kv.get<string[]>(VALIDATORS_KEY)
-    return validators || []
+    const client = await getRedisClient()
+    const data = await client.get(VALIDATORS_KEY)
+    if (!data) return []
+    return JSON.parse(data) as string[]
   } catch (error) {
     console.error('Error getting validators:', error)
     return []
@@ -30,7 +32,8 @@ export async function addValidator(walletAddress: string): Promise<void> {
     const validators = await getValidators()
     if (!validators.includes(walletAddress)) {
       validators.push(walletAddress)
-      await kv.set(VALIDATORS_KEY, validators)
+      const client = await getRedisClient()
+      await client.set(VALIDATORS_KEY, JSON.stringify(validators))
     }
   } catch (error) {
     console.error('Error adding validator:', error)
@@ -38,15 +41,28 @@ export async function addValidator(walletAddress: string): Promise<void> {
   }
 }
 
+// Remover validador
+export async function removeValidator(walletAddress: string): Promise<void> {
+  try {
+    let validators = await getValidators()
+    validators = validators.filter(wallet => wallet !== walletAddress)
+    const client = await getRedisClient()
+    await client.set(VALIDATORS_KEY, JSON.stringify(validators))
+  } catch (error) {
+    console.error('Error removing validator:', error)
+    throw error
+  }
+}
+
 // Inicializar lista de validadores (puede estar vacía inicialmente)
 export async function initializeValidators(): Promise<void> {
   try {
-    const existing = await kv.get<string[]>(VALIDATORS_KEY)
+    const client = await getRedisClient()
+    const existing = await client.get(VALIDATORS_KEY)
     if (!existing) {
-      await kv.set(VALIDATORS_KEY, [])
+      await client.set(VALIDATORS_KEY, JSON.stringify([]))
     }
   } catch (error) {
     console.error('Error initializing validators:', error)
   }
 }
-

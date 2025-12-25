@@ -138,6 +138,24 @@ export default function VerifyPage() {
             <p>{new Date(certificate.uploadedAt).toLocaleString('es-ES')}</p>
           </div>
 
+          {certificate.contractId && (
+            <div>
+              <h3 className="font-semibold text-gray-700">Smart Contract</h3>
+              <p className="text-sm text-gray-600 mb-2">
+                Este certificado está registrado en el Smart Contract de Stellar
+              </p>
+              <p className="font-mono text-xs break-all mb-2">{certificate.contractId}</p>
+              <a
+                href={`https://stellar.expert/explorer/testnet/contract/${certificate.contractId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary-600 hover:underline text-sm"
+              >
+                Ver contrato en Stellar Explorer →
+              </a>
+            </div>
+          )}
+
           {certificate.fileUrl && (
             <div>
               <h3 className="font-semibold text-gray-700">Archivo</h3>

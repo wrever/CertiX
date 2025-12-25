@@ -16,23 +16,24 @@ export function validateStellarAddress(address: string): boolean {
   return address.startsWith('G') && address.length === 56 && /^G[A-Z0-9]{55}$/.test(address)
 }
 
-// Crear transacción con hash en memo
+// Crear transacción con hash en memo (sin firmar, para que el usuario la firme)
 export async function createCertificateTransaction(
   hash: string,
-  destinationWallet: string
+  sourceWallet: string
 ): Promise<{ txXdr: string; txHash: string }> {
-  if (!validateStellarAddress(destinationWallet)) {
+  if (!validateStellarAddress(sourceWallet)) {
     throw new Error('Invalid Stellar wallet address')
   }
 
   const server = new Horizon.Server(HORIZON_URL)
   
-  const sourceKeypair = Keypair.fromSecret(process.env.STELLAR_SECRET_KEY!)
-  const sourceAccount = await server.loadAccount(sourceKeypair.publicKey())
+  // Usar la wallet del usuario como source
+  const sourceAccount = await server.loadAccount(sourceWallet)
   
   // Memo limitado a 28 bytes, usar primeros 28 caracteres del hash
   const memoText = hash.length > 28 ? hash.substring(0, 28) : hash
   
+  // Crear transacción desde la wallet del usuario
   const transaction = new TransactionBuilder(sourceAccount, {
     fee: '100',
     networkPassphrase: NETWORK_PASSPHRASE
@@ -40,7 +41,7 @@ export async function createCertificateTransaction(
     .addMemo(Memo.text(memoText))
     .addOperation(
       Operation.payment({
-        destination: destinationWallet,
+        destination: sourceWallet, // Pagar a sí mismo (solo para guardar el memo)
         asset: Asset.native(),
         amount: '0.00001'
       })
@@ -48,8 +49,7 @@ export async function createCertificateTransaction(
     .setTimeout(30)
     .build()
   
-  transaction.sign(sourceKeypair)
-  
+  // NO firmar aquí - el usuario debe firmar con su wallet
   const txXdr = transaction.toXDR()
   const txHash = transaction.hash().toString('hex')
   
