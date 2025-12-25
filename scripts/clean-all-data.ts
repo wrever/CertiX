@@ -90,11 +90,13 @@ async function cleanBlobStorage() {
     let totalDeleted = 0
     
     do {
-      const { blobs, cursor: nextCursor } = await list({
+      const result: { blobs: Array<{ url: string; pathname?: string }>; cursor?: string } = await list({
         token,
         cursor,
         limit: 1000 // Máximo por página
       })
+      
+      const { blobs, cursor: nextCursor } = result
       
       console.log(`📋 Encontrados ${blobs.length} archivos en esta página`)
       
