@@ -171,16 +171,16 @@ export default function UploadForm({ walletAddress }: UploadFormProps) {
   }
 
   return (
-    <div className="glass rounded-3xl p-8 md:p-10 shadow-2xl animate-fade-in">
+    <div className="glass-card rounded-3xl p-8 md:p-10 shadow-2xl animate-fade-in">
       <div className="mb-8">
-        <h2 className="text-3xl font-bold mb-2 text-gray-900">Subir Nueva Certificación</h2>
-        <p className="text-gray-600">Completa el formulario para registrar tu certificado en la blockchain</p>
+        <h2 className="text-3xl font-black mb-2 text-white gradient-text-animated">Subir Nueva Certificación</h2>
+        <p className="text-cyan-200/70">Completa el formulario para registrar tu certificado en la blockchain</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* File Upload */}
         <div>
-          <label className="block mb-3 font-semibold text-gray-900">
+          <label className="block mb-3 font-semibold text-white">
             Archivo del Certificado *
           </label>
           <div className="relative">
@@ -190,15 +190,15 @@ export default function UploadForm({ walletAddress }: UploadFormProps) {
               onChange={(e) => setFile(e.target.files?.[0] || null)}
               required
               disabled={!!pendingTxXdr}
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              className="w-full px-4 py-3 glass-card border-2 border-cyan-500/30 rounded-xl focus:border-[#28c0f0] focus:ring-2 focus:ring-cyan-500/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-cyan-500/20 file:text-cyan-200 hover:file:bg-cyan-500/30 text-cyan-200"
             />
           </div>
-          <p className="mt-2 text-sm text-gray-500">Formatos: PDF, PNG, JPG (Máx. 10MB)</p>
+          <p className="mt-2 text-sm text-cyan-200/60">Formatos: PDF, PNG, JPG (Máx. 10MB)</p>
         </div>
         
         {/* Title */}
         <div>
-          <label className="block mb-3 font-semibold text-gray-900">Título del Certificado *</label>
+          <label className="block mb-3 font-semibold text-white">Título del Certificado *</label>
           <input
             type="text"
             value={title}
@@ -207,14 +207,14 @@ export default function UploadForm({ walletAddress }: UploadFormProps) {
             required
             maxLength={255}
             disabled={!!pendingTxXdr}
-            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 disabled:opacity-50 placeholder:text-gray-400"
+            className="w-full px-4 py-3 glass-card border-2 border-cyan-500/30 rounded-xl focus:border-[#28c0f0] focus:ring-2 focus:ring-cyan-500/50 transition-all duration-200 disabled:opacity-50 placeholder:text-cyan-200/40 text-white bg-[#0a2d4a]/50"
           />
         </div>
         
         {/* Issuer */}
         <div>
-          <label className="block mb-3 font-semibold text-gray-900">
-            Emisor <span className="text-gray-400 font-normal">(opcional)</span>
+          <label className="block mb-3 font-semibold text-white">
+            Emisor <span className="text-cyan-200/60 font-normal">(opcional)</span>
           </label>
           <input
             type="text"
@@ -223,7 +223,7 @@ export default function UploadForm({ walletAddress }: UploadFormProps) {
             placeholder="Ej: Universidad XYZ, Plataforma ABC"
             maxLength={255}
             disabled={!!pendingTxXdr}
-            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 disabled:opacity-50 placeholder:text-gray-400"
+            className="w-full px-4 py-3 glass-card border-2 border-cyan-500/30 rounded-xl focus:border-[#28c0f0] focus:ring-2 focus:ring-cyan-500/50 transition-all duration-200 disabled:opacity-50 placeholder:text-cyan-200/40 text-white bg-[#0a2d4a]/50"
           />
         </div>
         
@@ -231,7 +231,7 @@ export default function UploadForm({ walletAddress }: UploadFormProps) {
         <button
           type="submit"
           disabled={(loading || signing || !file || !title) && !pendingTxXdr}
-          className="w-full py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold text-lg shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] active:scale-[0.98]"
+          className="w-full py-4 gradient-button text-white rounded-xl font-bold text-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] active:scale-[0.98] hover-shine"
         >
           {loading ? (
             <span className="flex items-center justify-center space-x-2">
@@ -255,12 +255,12 @@ export default function UploadForm({ walletAddress }: UploadFormProps) {
         
         {/* Pending Signature Alert */}
         {pendingTxXdr && (
-          <div className="p-4 bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-amber-200 rounded-xl animate-scale-in">
+          <div className="p-4 glass-card border-2 border-cyan-500/50 rounded-xl animate-scale-in bg-cyan-500/10">
             <div className="flex items-start space-x-3">
               <span className="text-2xl">⚠️</span>
               <div>
-                <p className="font-semibold text-amber-900 mb-1">Firma requerida</p>
-                <p className="text-sm text-amber-700">Freighter se abrirá para que firmes la transacción y registre tu certificado en la blockchain.</p>
+                <p className="font-semibold text-cyan-200 mb-1">Firma requerida</p>
+                <p className="text-sm text-cyan-200/70">Freighter se abrirá para que firmes la transacción y registre tu certificado en la blockchain.</p>
               </div>
             </div>
           </div>
@@ -268,12 +268,12 @@ export default function UploadForm({ walletAddress }: UploadFormProps) {
 
         {/* Error Message */}
         {error && (
-          <div className="p-4 bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 rounded-xl animate-scale-in">
+          <div className="p-4 glass-card border-2 border-red-500/50 rounded-xl animate-scale-in bg-red-500/10">
             <div className="flex items-start space-x-3">
               <span className="text-2xl">❌</span>
               <div>
-                <p className="font-semibold text-red-900 mb-1">Error</p>
-                <p className="text-sm text-red-700">{error}</p>
+                <p className="font-semibold text-red-300 mb-1">Error</p>
+                <p className="text-sm text-red-200/70">{error}</p>
               </div>
             </div>
           </div>
@@ -281,19 +281,19 @@ export default function UploadForm({ walletAddress }: UploadFormProps) {
 
         {/* Success Message */}
         {result && result.success && (
-          <div className="p-6 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl animate-scale-in">
+          <div className="p-6 glass-card border-2 border-cyan-500/50 rounded-xl animate-scale-in bg-cyan-500/10">
             <div className="flex items-start space-x-3 mb-4">
               <span className="text-3xl">✅</span>
               <div className="flex-1">
-                <p className="font-bold text-green-900 mb-2 text-lg">¡Certificado subido exitosamente!</p>
-                <p className="text-sm text-green-700 mb-1">
-                  <span className="font-semibold">Estado:</span> <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-md text-xs font-semibold">En Revisión</span>
+                <p className="font-bold text-cyan-200 mb-2 text-lg">¡Certificado subido exitosamente!</p>
+                <p className="text-sm text-cyan-200/70 mb-1">
+                  <span className="font-semibold">Estado:</span> <span className="px-2 py-1 glass-card border border-cyan-500/30 rounded-md text-xs font-semibold text-cyan-200">En Revisión</span>
                 </p>
-                <p className="text-xs text-green-600 mb-1 font-mono break-all">
+                <p className="text-xs text-cyan-200/60 mb-1 font-mono break-all">
                   <span className="font-semibold">ID:</span> {result.certificateId}
                 </p>
                 {result.txHash && (
-                  <p className="text-xs text-green-600 mb-4 font-mono break-all">
+                  <p className="text-xs text-cyan-200/60 mb-4 font-mono break-all">
                     <span className="font-semibold">TX Hash:</span> {result.txHash}
                   </p>
                 )}
@@ -302,7 +302,7 @@ export default function UploadForm({ walletAddress }: UploadFormProps) {
             <div className="flex flex-wrap gap-3">
               <a
                 href={`/verify/${result.certificateId}`}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                className="px-4 py-2 gradient-button text-white rounded-lg text-sm font-semibold transition-all duration-200 shadow-glow-arcusx hover:shadow-glow-strong"
               >
                 Ver Certificado →
               </a>
@@ -311,14 +311,14 @@ export default function UploadForm({ walletAddress }: UploadFormProps) {
                   href={result.stellarExplorerUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                  className="px-4 py-2 glass-card border border-cyan-500/30 text-cyan-200 rounded-lg text-sm font-semibold hover:bg-cyan-500/20 transition-all duration-200"
                 >
                   Stellar Explorer →
                 </a>
               )}
               <a
                 href="/my-certificates"
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-200 transition-all duration-200"
+                className="px-4 py-2 glass-card border border-cyan-500/30 text-cyan-200 rounded-lg text-sm font-semibold hover:bg-cyan-500/20 transition-all duration-200"
               >
                 Mis Certificados →
               </a>

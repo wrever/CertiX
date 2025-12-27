@@ -19,14 +19,14 @@ export default function CertificateList({
 }: CertificateListProps) {
   if (certificates.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow p-8 text-center">
-        <p className="text-gray-500">No hay certificados disponibles</p>
+      <div className="glass-card rounded-lg shadow p-8 text-center border border-cyan-500/20">
+        <p className="text-cyan-200/70">No hay certificados disponibles</p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {certificates.map((cert) => (
         <div key={cert.id}>
           <CertificateCard
@@ -49,4 +49,3 @@ export default function CertificateList({
     </div>
   )
 }
-

@@ -16,15 +16,15 @@ export default function StatusFilter({ currentStatus, onFilterChange }: StatusFi
   ]
 
   return (
-    <div className="flex gap-2 mb-6">
+    <div className="flex gap-2 mb-6 flex-wrap">
       {filters.map((filter) => (
         <button
           key={filter.value}
           onClick={() => onFilterChange(filter.value)}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+          className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 hover:scale-105 ${
             currentStatus === filter.value
-              ? 'bg-primary-600 text-white'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              ? 'gradient-button text-white shadow-glow-arcusx'
+              : 'glass-card border border-cyan-500/30 text-cyan-200 hover:bg-cyan-500/20'
           }`}
         >
           {filter.label}
@@ -33,4 +33,3 @@ export default function StatusFilter({ currentStatus, onFilterChange }: StatusFi
     </div>
   )
 }
-
