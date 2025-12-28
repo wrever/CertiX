@@ -169,12 +169,6 @@ export async function registerCertificateOnContract(
     if (process.env.NODE_ENV === 'development') {
       console.error('❌ Error submitting transaction:', e)
     }
-      status: e.response?.status,
-      statusText: e.response?.statusText,
-      extras: e.response?.data?.extras,
-      resultCodes: e.response?.data?.extras?.result_codes,
-      resultXdr: e.response?.data?.extras?.result_xdr
-    })
     
     // Extraer mensaje de error más descriptivo
     let errorMessage = e.message || 'Unknown error'
