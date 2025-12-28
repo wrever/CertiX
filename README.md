@@ -1,121 +1,557 @@
-# CertiX - Sistema de Certificaciones Verificables en Stellar
+# CertiX
 
-**by ArcusX**
+<div align="center">
 
-Sistema completo para subir, validar y verificar certificaciones usando Stellar blockchain.
+![CertiX Logo](https://img.shields.io/badge/CertiX-Certifications-blue?style=for-the-badge)
+![Stellar](https://img.shields.io/badge/Stellar-Blockchain-7D00FF?style=for-the-badge&logo=stellar)
+![Next.js](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue?style=for-the-badge&logo=typescript)
+
+**Sistema de Certificaciones Verificables en Blockchain Stellar**
+
+*Certificaciones inmutables, transparentes y descentralizadas*
+
+[Características](#-características) • [Instalación](#-instalación) • [Documentación](#-documentación) • [API](#-api) • [Deploy](#-deploy)
+
+</div>
+
+---
+
+## 📋 Descripción
+
+**CertiX** es una plataforma descentralizada para la emisión, validación y verificación de certificaciones digitales utilizando la blockchain de Stellar y Smart Contracts Soroban. Cada certificado queda registrado de forma **inmutable** y puede ser verificado públicamente por cualquier persona sin necesidad de permisos especiales.
+
+### 🎯 Problema que Resuelve
+
+- **Falsificación de certificados**: Los certificados tradicionales pueden ser falsificados fácilmente
+- **Verificación centralizada**: Dependencia de autoridades centrales para validar autenticidad
+- **Falta de transparencia**: No hay forma pública de verificar la validez de un certificado
+- **Almacenamiento vulnerable**: Los certificados digitales pueden ser modificados o perdidos
+
+### ✅ Solución de CertiX
+
+- **Inmutabilidad blockchain**: Hash SHA256 registrado permanentemente en Stellar
+- **Smart Contracts**: Estados de validación gestionados por contratos inteligentes
+- **Verificación pública**: Cualquiera puede verificar la autenticidad sin permisos
+- **Descentralización**: No depende de un servidor central único
+
+---
 
 ## ✨ Características
 
-- ✅ **Wallet como identificador único** - Sin login tradicional
-- ✅ **Sistema de estados** - Pendiente/Aprobado/Rechazado
-- ✅ **Sistema de validadores** - Wallets autorizadas para validar
-- ✅ **Verificación blockchain** - Hash inmutable en Stellar
-- ✅ **Filtros y estadísticas** - Visualización completa
-- ✅ **Dashboard de validadores** - Gestión de certificados pendientes
+### 🔐 Seguridad y Autenticidad
 
-## 🚀 Inicio Rápido
+- **Hash SHA256 inmutable**: Cada certificado genera un hash único que se registra en blockchain
+- **Firma de transacciones**: El usuario firma con su wallet Stellar como prueba de autenticidad
+- **Smart Contract Soroban**: Estados de validación gestionados por contratos inteligentes
+- **Verificación blockchain**: Comparación automática con transacciones en Stellar
 
-### 1. Instalar Dependencias
+### 🎨 Experiencia de Usuario
+
+- **Wallet como identificador único**: Sin necesidad de crear cuentas tradicionales
+- **Interfaz moderna y responsive**: Diseño profesional con Tailwind CSS
+- **Dashboard de administración**: Panel completo para validadores
+- **Filtros y estadísticas**: Visualización avanzada de certificados
+
+### ⚡ Funcionalidades Técnicas
+
+- **Sistema de estados**: `pending` → `approved` / `rejected`
+- **Validación por administradores**: Solo wallets autorizadas pueden aprobar/rechazar
+- **Almacenamiento descentralizado**: Archivos en Vercel Blob, datos en Redis
+- **API REST completa**: Endpoints para todas las operaciones
+
+---
+
+## 🏗️ Arquitectura
+
+### Stack Tecnológico
+
+| Categoría | Tecnología |
+|-----------|-----------|
+| **Frontend** | Next.js 14 (App Router), React 18, TypeScript |
+| **Styling** | Tailwind CSS, CSS Modules |
+| **Blockchain** | Stellar SDK, Soroban Smart Contracts |
+| **Wallet** | Freighter (via Stellar Wallets Kit) |
+| **Storage** | Vercel Blob (archivos), Redis (datos) |
+| **Deployment** | Vercel |
+
+### Flujo de Datos
+
+```
+┌─────────────┐
+│   Usuario   │
+└──────┬──────┘
+       │
+       ▼
+┌─────────────────┐     ┌──────────────┐     ┌─────────────┐
+│  Sube Archivo    │────▶│  Genera Hash │────▶│  Firma TX   │
+└─────────────────┘     └──────────────┘     └──────┬──────┘
+                                                      │
+                                                      ▼
+┌─────────────────┐     ┌──────────────┐     ┌─────────────┐
+│  Smart Contract │◀────│  Registra en │◀────│  Envía TX  │
+│    (Soroban)    │     │  Blockchain  │     │  a Stellar  │
+└────────┬────────┘     └──────────────┘     └─────────────┘
+         │
+         ▼
+┌─────────────────┐
+│ Estado: Pending │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐     ┌──────────────┐
+│ Admin Aprueba/  │────▶│ Actualiza en │
+│   Rechaza       │     │  Smart Cont. │
+└─────────────────┘     └──────────────┘
+```
+
+### Componentes Principales
+
+```
+certix/
+├── app/
+│   ├── api/                          # API Routes
+│   │   ├── certificate/
+│   │   │   ├── upload/               # Subir certificado
+│   │   │   ├── upload/sign/          # Firmar y registrar
+│   │   │   ├── verify/[id]/          # Verificar certificado
+│   │   │   ├── [id]/status/          # Cambiar estado (admin)
+│   │   │   └── user/[wallet]/        # Listar por wallet
+│   │   └── admin/check/              # Verificar admin
+│   ├── page.tsx                      # Homepage
+│   ├── upload/                       # Página de subida
+│   ├── my-certificates/              # Mis certificados
+│   ├── verify/[id]/                   # Verificar certificado
+│   └── validator/dashboard/          # Dashboard admin
+├── components/                        # Componentes React
+│   ├── WalletConnect.tsx             # Conexión de wallet
+│   ├── UploadForm.tsx                # Formulario de subida
+│   ├── CertificateCard.tsx           # Card de certificado
+│   ├── ValidatorActions.tsx          # Acciones de admin
+│   └── ...
+├── lib/                               # Utilidades
+│   ├── stellar.ts                    # Funciones Stellar
+│   ├── soroban.ts                   # Smart Contract (registro)
+│   ├── soroban-admin.ts             # Smart Contract (admin)
+│   ├── hash.ts                      # Generación de hash
+│   ├── storage.ts                   # Upload de archivos
+│   └── db.ts                        # Operaciones Redis
+├── hooks/
+│   └── useWallet.ts                 # Hook de wallet
+└── types/
+    └── certificate.ts               # Tipos TypeScript
+```
+
+---
+
+## 🚀 Instalación
+
+### Prerrequisitos
+
+- **Node.js** 18+ y npm
+- **Cuenta Stellar Testnet** (para desarrollo)
+- **Freighter Wallet** instalada en el navegador
+- **Cuenta Vercel** (para Blob Storage y Redis)
+
+### Paso 1: Clonar e Instalar
+
 ```bash
+# Clonar el repositorio
+git clone <repository-url>
 cd certix
+
+# Instalar dependencias
 npm install
 ```
 
-### 2. Configurar Variables de Entorno
+### Paso 2: Configurar Variables de Entorno
 
-Crear archivo `.env.local`:
+Crear archivo `.env.local` en la raíz del proyecto:
+
 ```env
-STELLAR_SECRET_KEY=SD... (cuenta del sistema)
-STELLAR_NETWORK=TESTNET
+# Stellar Configuration
+STELLAR_SECRET_KEY=SD...                    # Secret key de cuenta del sistema
+STELLAR_NETWORK=TESTNET                      # TESTNET o MAINNET
 HORIZON_URL=https://horizon-testnet.stellar.org
-BLOB_READ_WRITE_TOKEN=vercel_blob_xxx
-KV_REST_API_URL=https://xxx.kv.vercel.app
-KV_REST_API_TOKEN=xxx
+SOROBAN_RPC_URL=https://soroban-testnet.stellar.org
+
+# Smart Contract
+SOROBAN_CONTRACT_ID=CAK5PGHHLVOR5EAMNHQMX3HA3MXZDYYI7WHGJCHHB6CWJFBTDOHDLCFG
+ADMIN_PUBLIC_KEY=GALR6D6JTE2C554HD2OOW5CDMUYBYZ43S4VLWPDAMJFLSF2GQW5GLCT3
+ADMIN_SECRET_KEY=SC3FVXSBS5OJCGQNO6FWIMGIILKTV6Q26SYQHN5ZHZRSMIEUSXMJAMNY
+
+# Storage
+BLOB_READ_WRITE_TOKEN=vercel_blob_xxx        # Token de Vercel Blob
+REDIS_URL=redis://...                        # URL de Redis
 ```
 
-### 3. Crear Cuenta Stellar del Sistema
-1. Ir a https://laboratory.stellar.org/#account-creator?network=test
-2. Generar keypair
-3. Fondear con friendbot
-4. Copiar Secret Key a `.env.local`
+### Paso 3: Crear Cuenta Stellar del Sistema
 
-### 4. Configurar Vercel
-1. Crear Vercel Blob Storage → Obtener `BLOB_READ_WRITE_TOKEN`
-2. Crear Vercel KV → Obtener `KV_REST_API_URL` y `KV_REST_API_TOKEN`
-3. Agregar variables en Vercel Dashboard
+1. Ir a [Stellar Laboratory](https://laboratory.stellar.org/#account-creator?network=test)
+2. Generar un nuevo keypair
+3. Fondear la cuenta con Friendbot
+4. Copiar la **Secret Key** a `.env.local` como `STELLAR_SECRET_KEY`
 
-### 5. Inicializar Validadores
-En Vercel KV, crear key `validators:list` con array de wallet addresses:
-```json
-["GABC...", "GDEF..."]
-```
+### Paso 4: Configurar Vercel Blob Storage
 
-### 6. Ejecutar en Desarrollo
+1. Ir a [Vercel Dashboard](https://vercel.com/dashboard)
+2. Crear un nuevo **Blob Store**
+3. Copiar el `BLOB_READ_WRITE_TOKEN` a `.env.local`
+
+### Paso 5: Configurar Redis
+
+**Opción A: Redis Cloud (Recomendado)**
+1. Crear cuenta en [Redis Cloud](https://redis.com/try-free/)
+2. Crear base de datos
+3. Copiar la URL de conexión a `.env.local` como `REDIS_URL`
+
+**Opción B: Vercel KV**
+1. En Vercel Dashboard, crear **KV Database**
+2. Copiar `KV_REST_API_URL` y `KV_REST_API_TOKEN` a `.env.local`
+
+### Paso 6: Ejecutar en Desarrollo
+
 ```bash
 npm run dev
 ```
 
 Abrir [http://localhost:3000](http://localhost:3000)
 
-## 📁 Estructura del Proyecto
+---
 
-```
-certix/
-├── app/
-│   ├── api/                    # 9 Endpoints API
-│   ├── page.tsx                 # Homepage
-│   ├── upload/                  # Subir certificado
-│   ├── verify/[id]/            # Verificar certificado
-│   ├── my-certificates/         # Mis certificados (con filtros)
-│   ├── user/[wallet]/           # Certificados públicos
-│   └── validator/dashboard/    # Dashboard validadores
-├── components/                   # 10 Componentes
-├── hooks/                       # useWallet
-├── lib/                         # 5 Utilidades
-└── types/                       # TypeScript types
-```
+## 📖 Uso
 
-## 🔌 Endpoints API
+### Para Usuarios
 
-- `POST /api/certificate/upload` - Subir certificado
-- `GET /api/certificate/verify/[id]` - Verificar certificado
-- `GET /api/certificate/user/[wallet]` - Listar certificados (con filtros)
-- `GET /api/certificate/[id]` - Obtener certificado
-- `PUT /api/certificate/[id]/status` - Cambiar estado (validadores)
-- `GET /api/certificate/pending` - Certificados pendientes
-- `GET /api/validators/list` - Listar validadores
-- `GET /api/validators/check/[wallet]` - Verificar validador
-- `GET /api/health` - Health check
+#### 1. Conectar Wallet
 
-## 🔧 Stack Tecnológico
+1. Abre CertiX en tu navegador
+2. Haz clic en **"Conectar Freighter"**
+3. Autoriza la conexión en Freighter
+4. Tu wallet será tu identificador único
 
-- **Framework:** Next.js 14 (App Router)
-- **Lenguaje:** TypeScript
-- **Styling:** Tailwind CSS
-- **Blockchain:** Stellar SDK
-- **Wallet:** Freighter (via Stellar Wallets Kit)
-- **Storage:** Vercel Blob
-- **Database:** Vercel KV
+#### 2. Subir Certificado
 
-## 📚 Documentación
+1. Ve a `/upload`
+2. Selecciona un archivo (PDF, PNG, JPG - máx. 10MB)
+3. Completa el título y emisor (opcional)
+4. Haz clic en **"Subir Certificado"**
+5. **Firma la transacción** con Freighter cuando se solicite
+6. El certificado quedará registrado con estado `pending`
 
-- **`PLAN_CERTIX.md`** - Plan completo de implementación
-- **`ESTADO_PROYECTO.md`** - Estado actual del proyecto
-- **`PROGRESO_IMPLEMENTACION.md`** - Progreso detallado
+#### 3. Ver Mis Certificados
 
-## 🚀 Deploy
+1. Ve a `/my-certificates`
+2. Filtra por estado: Todos, Pendientes, Aprobados, Rechazados
+3. Ver estadísticas de tus certificados
+4. Accede a detalles y verificación de cada uno
 
-```bash
-vercel --prod
-```
+#### 4. Verificar Certificado
 
-No olvides configurar todas las variables de entorno en Vercel Dashboard.
+1. Comparte el link `/verify/[id]` o busca por ID
+2. El sistema verificará automáticamente contra la blockchain
+3. Verás el estado de validación y links a Stellar Explorer
 
-## 📝 Licencia
+### Para Administradores
 
-MIT
+#### 1. Acceder al Dashboard
+
+1. Conecta la **wallet admin** configurada en el Smart Contract
+2. Ve a `/validator/dashboard`
+3. Verás un banner confirmando que eres admin
+
+#### 2. Aprobar/Rechazar Certificados
+
+1. Revisa los certificados pendientes
+2. Haz clic en **"Aprobar"** o **"Rechazar"**
+3. Si rechazas, proporciona una razón
+4. **Firma la transacción** con Freighter
+5. El estado se actualizará en el Smart Contract y Redis
+
+> 📚 **Documentación detallada**: Ver `docs/COMO_USAR_WALLET_ADMIN.md`
 
 ---
 
-**Estado:** ✅ Código 100% Completo - Listo para Configuración y Testing
+## 🔌 API
 
+### Endpoints Principales
+
+#### Subir Certificado
+
+```http
+POST /api/certificate/upload
+Content-Type: multipart/form-data
+
+{
+  "file": File,
+  "walletAddress": "G...",
+  "title": "Certificado de Python",
+  "issuer": "Universidad XYZ" (opcional)
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "certificateId": "uuid",
+  "txXdr": "base64...",
+  "hash": "sha256...",
+  "fileUrl": "https://...",
+  "needsSignature": true
+}
+```
+
+#### Firmar y Registrar
+
+```http
+POST /api/certificate/upload/sign
+Content-Type: application/json
+
+{
+  "certificateId": "uuid",
+  "signedTxXdr": "base64...",
+  "walletAddress": "G...",
+  "hash": "sha256...",
+  "fileUrl": "https://...",
+  "title": "Certificado de Python"
+}
+```
+
+#### Verificar Certificado
+
+```http
+GET /api/certificate/verify/[id]
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "isValid": true,
+  "certificate": { ... },
+  "stellarExplorerUrl": "https://..."
+}
+```
+
+#### Listar Certificados por Wallet
+
+```http
+GET /api/certificate/user/[wallet]?status=pending
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "certificates": [ ... ],
+  "stats": {
+    "total": 10,
+    "pending": 3,
+    "approved": 6,
+    "rejected": 1
+  }
+}
+```
+
+#### Preparar Transacción de Aprobación/Rechazo
+
+```http
+POST /api/certificate/[id]/status/prepare
+Content-Type: application/json
+
+{
+  "status": "approved" | "rejected",
+  "adminWallet": "G...",
+  "reason": "Razón de rechazo" (opcional)
+}
+```
+
+#### Enviar Transacción Firmada
+
+```http
+POST /api/certificate/[id]/status/submit
+Content-Type: application/json
+
+{
+  "signedTxXdr": "base64...",
+  "adminWallet": "G...",
+  "status": "approved",
+  "reason": "..." (opcional)
+}
+```
+
+#### Verificar Admin
+
+```http
+GET /api/admin/check?wallet=G...
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "isAdmin": true,
+  "adminAddress": "G...",
+  "wallet": "G..."
+}
+```
+
+---
+
+## 🔗 Smart Contract Integration
+
+CertiX utiliza **Smart Contracts Soroban** para gestionar los estados de los certificados de forma inmutable.
+
+### Funciones del Contrato
+
+- `register_certificate(file_hash, tx_hash, owner)` - Registrar nuevo certificado
+- `approve_certificate(file_hash, admin)` - Aprobar certificado (solo admin)
+- `reject_certificate(file_hash, admin, reason)` - Rechazar certificado (solo admin)
+- `get_certificate(file_hash)` - Obtener datos del certificado
+- `is_approved(file_hash)` - Verificar si está aprobado
+
+### Flujo con Smart Contract
+
+1. **Registro**: Usuario sube certificado → Se registra en contrato (estado: `pending`)
+2. **Validación**: Admin aprueba/rechaza → Estado actualizado en contrato
+3. **Sincronización**: Redis se sincroniza con el contrato para queries rápidas
+4. **Verificación**: Cualquiera puede verificar el estado desde el contrato
+
+> 📚 **Documentación completa**: Ver `docs/FLUJO_COMPLETO_SMART_CONTRACT.md`
+
+---
+
+## 🚀 Deploy
+
+### Deploy a Vercel
+
+1. **Conectar repositorio** a Vercel
+2. **Configurar variables de entorno** en Vercel Dashboard:
+   - Todas las variables de `.env.local`
+3. **Deploy automático** en cada push a `main`
+
+```bash
+# O deploy manual
+vercel --prod
+```
+
+### Variables de Entorno en Producción
+
+Asegúrate de configurar todas las variables en Vercel Dashboard:
+
+- `STELLAR_SECRET_KEY`
+- `STELLAR_NETWORK` (MAINNET para producción)
+- `HORIZON_URL`
+- `SOROBAN_RPC_URL`
+- `SOROBAN_CONTRACT_ID`
+- `ADMIN_PUBLIC_KEY`
+- `ADMIN_SECRET_KEY`
+- `BLOB_READ_WRITE_TOKEN`
+- `REDIS_URL`
+
+### Post-Deploy
+
+1. Verificar que el Smart Contract esté desplegado
+2. Inicializar el contrato con la wallet admin
+3. Probar subida y verificación de certificados
+4. Configurar monitoreo y logs
+
+---
+
+## 🧪 Testing
+
+### Scripts Disponibles
+
+```bash
+# Desarrollo
+npm run dev
+
+# Build de producción
+npm run build
+
+# Iniciar servidor de producción
+npm run start
+
+# Linting
+npm run lint
+
+# Limpiar todos los datos (desarrollo)
+npm run clean
+```
+
+### Testing Manual
+
+1. **Subir certificado**: Verificar que se genera hash y se crea transacción
+2. **Firmar transacción**: Verificar que Freighter solicita firma
+3. **Registro en contrato**: Verificar en Stellar Explorer
+4. **Aprobación admin**: Verificar que el estado se actualiza
+5. **Verificación pública**: Verificar que cualquiera puede verificar
+
+---
+
+## 📚 Documentación Adicional
+
+- [`docs/COMO_USAR_WALLET_ADMIN.md`](docs/COMO_USAR_WALLET_ADMIN.md) - Guía para administradores
+- [`docs/FLUJO_COMPLETO_SMART_CONTRACT.md`](docs/FLUJO_COMPLETO_SMART_CONTRACT.md) - Flujo con Smart Contracts
+- [`docs/COMO_LIMPIAR_DATOS.md`](docs/COMO_LIMPIAR_DATOS.md) - Limpieza de datos
+- [`PLAN_CERTIX.md`](PLAN_CERTIX.md) - Plan de implementación
+- [`ESTADO_PROYECTO.md`](ESTADO_PROYECTO.md) - Estado actual
+
+---
+
+## 🤝 Contribución
+
+Las contribuciones son bienvenidas. Por favor:
+
+1. Fork el proyecto
+2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abre un Pull Request
+
+### Guías de Contribución
+
+- Sigue las convenciones de código existentes
+- Añade tests para nuevas funcionalidades
+- Actualiza la documentación según sea necesario
+- Asegúrate de que el build pase sin errores
+
+---
+
+## 📝 Licencia
+
+Este proyecto está bajo la Licencia MIT. Ver `LICENSE` para más detalles.
+
+---
+
+## 🆘 Soporte
+
+- **Issues**: Abre un issue en GitHub para reportar bugs o solicitar features
+- **Documentación**: Consulta la carpeta `docs/` para guías detalladas
+- **Stellar**: [Documentación oficial de Stellar](https://developers.stellar.org/)
+- **Soroban**: [Documentación de Soroban](https://soroban.stellar.org/docs)
+
+---
+
+## 🎯 Roadmap
+
+- [ ] Soporte para múltiples administradores
+- [ ] Sistema de notificaciones
+- [ ] API pública para integraciones
+- [ ] Exportación de certificados en PDF
+- [ ] Integración con más wallets Stellar
+- [ ] Dashboard de analytics avanzado
+- [ ] Sistema de badges y credenciales
+
+---
+
+<div align="center">
+
+**CertiX** - Certificaciones Verificables en Blockchain
+
+Construido con ❤️ usando Stellar y Soroban
+
+[⭐ Star en GitHub](https://github.com) • [📖 Documentación](./docs) • [🐛 Reportar Bug](https://github.com)
+
+</div>

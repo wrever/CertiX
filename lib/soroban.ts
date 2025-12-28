@@ -51,12 +51,7 @@ export async function registerCertificateOnContract(
   ownerAddress: string,
   ownerKeypair: Keypair
 ): Promise<string> {
-  console.log('📝 registerCertificateOnContract called with:', {
-    fileHash: fileHash.substring(0, 16) + '...',
-    txHash: txHash.substring(0, 16) + '...',
-    ownerAddress,
-    contractId: CONTRACT_ID
-  })
+  // Registrando certificado en contrato
 
   const contract = new Contract(CONTRACT_ID)
   const server = new Horizon.Server(HORIZON_URL)
@@ -83,10 +78,7 @@ export async function registerCertificateOnContract(
       throw new Error(`Hash must be 32 bytes. fileHash: ${fileHashBytes.length}, txHash: ${txHashBytes.length}`)
     }
     
-    console.log('✅ Hashes converted correctly:', {
-      fileHashBytesLength: fileHashBytes.length,
-      txHashBytesLength: txHashBytes.length
-    })
+    // Hashes convertidos correctamente
   } catch (e: any) {
     console.error('❌ Error converting hashes:', e)
     throw new Error(`Invalid hash format: ${e.message}`)
@@ -96,7 +88,7 @@ export async function registerCertificateOnContract(
   let ownerScVal: xdr.ScVal
   try {
     ownerScVal = addressToScVal(ownerAddress)
-    console.log('✅ Owner address converted to ScVal')
+    // Owner address convertido a ScVal
   } catch (e: any) {
     console.error('❌ Error converting owner address:', e)
     throw new Error(`Invalid owner address: ${e.message}`)
@@ -105,22 +97,13 @@ export async function registerCertificateOnContract(
   // Crear operación para invocar el contrato
   let operation
   try {
-    console.log('🔧 Creating contract call operation...')
-    console.log('Parameters:', {
-      ownerAddress,
-      fileHashLength: fileHashBytes.length,
-      txHashLength: txHashBytes.length,
-      ownerScValType: ownerScVal.switch().name
-    })
-    
-    // Usar bufferToScVal helper en lugar de xdr.ScVal.scvBytes directamente
+    // Crear operación de llamada al contrato
     operation = contract.call(
       'register_certificate',
       ownerScVal,
       bufferToScVal(fileHashBytes),
       bufferToScVal(txHashBytes)
     )
-    console.log('✅ Contract call operation created')
   } catch (e: any) {
     console.error('❌ Error creating contract call:', e)
     console.error('Error stack:', e.stack)
@@ -130,9 +113,7 @@ export async function registerCertificateOnContract(
   // Cargar cuenta del owner
   let sourceAccount
   try {
-    console.log('📥 Loading source account...')
     sourceAccount = await server.loadAccount(ownerKeypair.publicKey())
-    console.log('✅ Source account loaded, sequence:', sourceAccount.sequenceNumber())
   } catch (e: any) {
     console.error('❌ Error loading source account:', e)
     throw new Error(`Error loading account: ${e.message}`)
@@ -142,17 +123,14 @@ export async function registerCertificateOnContract(
   // IMPORTANTE: Para Soroban, debemos preparar ANTES de firmar
   let transaction
   try {
-    console.log('🔨 Building transaction (not signed yet)...')
     // Para transacciones Soroban, usar fee más alto (10000 stroops = 0.001 XLM)
-    // Las transacciones de contratos inteligentes requieren más recursos
     transaction = new TransactionBuilder(sourceAccount, {
-      fee: '10000', // Aumentar fee para transacciones Soroban
+      fee: '10000',
       networkPassphrase: NETWORK_PASSPHRASE
     })
       .addOperation(operation)
-      .setTimeout(300) // 5 minutos
+      .setTimeout(300)
       .build()
-    console.log('✅ Transaction built (not signed yet)')
   } catch (e: any) {
     console.error('❌ Error building transaction:', e)
     throw new Error(`Error building transaction: ${e.message}`)
@@ -161,12 +139,10 @@ export async function registerCertificateOnContract(
   // Para transacciones Soroban, necesitamos preparar la transacción usando el RPC
   // ANTES de firmarla
   try {
-    console.log('🔧 Preparing Soroban transaction with RPC (before signing)...')
     // Simular la transacción para obtener el fee correcto
     const simulation = await rpc.simulateTransaction(transaction)
     
     if (SorobanRpc.Api.isSimulationError(simulation)) {
-      console.error('❌ Simulation error:', simulation)
       const errorStr = JSON.stringify(simulation)
       if (errorStr.includes('already registered') || errorStr.includes('Certificate already')) {
         throw new Error('Certificate already registered in the Smart Contract')
@@ -174,39 +150,25 @@ export async function registerCertificateOnContract(
       throw new Error(`Transaction simulation failed: ${errorStr.substring(0, 200)}`)
     }
     
-    console.log('✅ Transaction simulated successfully, cost:', simulation.cost)
-    
-    // Preparar la transacción con el fee correcto (esto modifica la transacción)
+    // Preparar la transacción con el fee correcto
     transaction = await rpc.prepareTransaction(transaction)
-    console.log('✅ Transaction prepared for Soroban')
     
-    // AHORA firmar la transacción preparada
-    console.log('✍️ Signing prepared transaction...')
+    // Firmar la transacción preparada
     transaction.sign(ownerKeypair)
-    console.log('✅ Transaction signed')
     
-    console.log('📤 Submitting prepared and signed transaction to Soroban RPC...')
+    // Enviar transacción firmada
     const response = await rpc.sendTransaction(transaction)
-    
-    console.log('📋 Response from RPC:', {
-      status: (response as any).status,
-      hash: (response as any).hash,
-      errorResultXdr: (response as any).errorResultXdr
-    })
     
     // Verificar si la transacción fue exitosa
     if ((response as any).hash) {
-      console.log('✅ Transaction submitted successfully, hash:', (response as any).hash)
       return (response as any).hash
     } else {
-      console.error('❌ Transaction submission failed:', response)
       throw new Error(`Transaction submission failed: ${JSON.stringify(response)}`)
     }
   } catch (e: any) {
-    console.error('❌ Error submitting transaction:', e)
-    console.error('Error details:', {
-      message: e.message,
-      response: e.response?.data,
+    if (process.env.NODE_ENV === 'development') {
+      console.error('❌ Error submitting transaction:', e)
+    }
       status: e.response?.status,
       statusText: e.response?.statusText,
       extras: e.response?.data?.extras,

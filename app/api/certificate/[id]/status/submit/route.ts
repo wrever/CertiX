@@ -14,19 +14,7 @@ export async function POST(
     const body = await request.json()
     const { signedTxXdr, adminWallet, status, reason } = body
 
-    console.log('📝 Submit endpoint called with:', {
-      id,
-      hasSignedTxXdr: !!signedTxXdr,
-      adminWallet: !!adminWallet,
-      status: !!status
-    })
-
     if (!signedTxXdr || !adminWallet || !status) {
-      console.error('❌ Missing required fields:', {
-        signedTxXdr: !signedTxXdr,
-        adminWallet: !adminWallet,
-        status: !status
-      })
       return NextResponse.json(
         { success: false, error: 'Signed transaction XDR, admin wallet, and status are required' },
         { status: 400 }
@@ -61,19 +49,11 @@ export async function POST(
     // Esto NO afecta la subida porque es código completamente separado
     let finalTxHash: string
     try {
-      console.log('📤 [SUBMIT] Sending signed transaction using soroban-admin...')
       finalTxHash = await submitAdminTransaction(signedTxXdr)
-      console.log('✅ [SUBMIT] Transaction sent successfully, hash:', finalTxHash)
     } catch (txError: any) {
-      console.error('❌ Error sending transaction to Soroban RPC:', txError)
-      console.error('Error details:', {
-        message: txError.message,
-        response: txError.response?.data,
-        status: txError.response?.status,
-        statusText: txError.response?.statusText,
-        error: txError.error
-      })
-      console.error('Transaction XDR (first 100 chars):', signedTxXdr?.substring(0, 100))
+      if (process.env.NODE_ENV === 'development') {
+        console.error('❌ Error sending transaction to Soroban RPC:', txError)
+      }
       
       // Extraer mensaje de error más descriptivo
       let errorMessage = txError.message || 'Unknown error'

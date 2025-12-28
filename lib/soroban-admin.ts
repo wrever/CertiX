@@ -89,20 +89,15 @@ export async function prepareApproveTransaction(
     .setTimeout(300) // 5 minutos
     .build()
 
-  // IMPORTANTE: Preparar la transacción con Soroban RPC ANTES de que el admin la firme
-  console.log('🔧 [ADMIN] Simulating transaction...')
+  // Preparar la transacción con Soroban RPC ANTES de que el admin la firme
   const simulation = await rpc.simulateTransaction(transaction)
 
   if (SorobanRpc.Api.isSimulationError(simulation)) {
-    console.error('❌ [ADMIN] Simulation error:', simulation)
     throw new Error(`Transaction simulation failed: ${JSON.stringify(simulation)}`)
   }
 
-  console.log('✅ [ADMIN] Transaction simulated successfully, cost:', simulation.cost)
-
   // Preparar la transacción (esto actualiza el fee y otros parámetros)
   transaction = await rpc.prepareTransaction(transaction)
-  console.log('✅ [ADMIN] Transaction prepared for Soroban')
 
   // NO firmar - devolver XDR para que el admin firme
   const txXdr = transaction.toXDR()
@@ -120,11 +115,7 @@ export async function prepareRejectTransaction(
   adminWallet: string,
   reason: string
 ): Promise<{ txXdr: string; txHash: string }> {
-  console.log('🔧 [ADMIN] Preparing reject transaction...', {
-    fileHash: fileHash.substring(0, 16) + '...',
-    adminWallet,
-    reason: reason.substring(0, 50) + '...'
-  })
+  // Preparando transacción de rechazo
 
   const contract = new Contract(CONTRACT_ID)
   const server = new Horizon.Server(HORIZON_URL)
@@ -166,20 +157,15 @@ export async function prepareRejectTransaction(
     .setTimeout(300) // 5 minutos
     .build()
 
-  // IMPORTANTE: Preparar la transacción con Soroban RPC ANTES de que el admin la firme
-  console.log('🔧 [ADMIN] Simulating transaction...')
+  // Preparar la transacción con Soroban RPC ANTES de que el admin la firme
   const simulation = await rpc.simulateTransaction(transaction)
 
   if (SorobanRpc.Api.isSimulationError(simulation)) {
-    console.error('❌ [ADMIN] Simulation error:', simulation)
     throw new Error(`Transaction simulation failed: ${JSON.stringify(simulation)}`)
   }
 
-  console.log('✅ [ADMIN] Transaction simulated successfully, cost:', simulation.cost)
-
   // Preparar la transacción (esto actualiza el fee y otros parámetros)
   transaction = await rpc.prepareTransaction(transaction)
-  console.log('✅ [ADMIN] Transaction prepared for Soroban')
 
   // NO firmar - devolver XDR para que el admin firme
   const txXdr = transaction.toXDR()
@@ -195,37 +181,17 @@ export async function prepareRejectTransaction(
 export async function submitAdminTransaction(
   signedTxXdr: string
 ): Promise<string> {
-  console.log('📤 [ADMIN] Submitting signed transaction to Soroban RPC...')
-
   const rpc = new SorobanRpc.Server(SOROBAN_RPC_URL)
 
   // Reconstruir la transacción desde el XDR firmado
   const transaction = TransactionBuilder.fromXDR(signedTxXdr, NETWORK_PASSPHRASE)
 
-  // Verificar si es una transacción normal o FeeBump
-  if ('operations' in transaction) {
-    console.log('📋 [ADMIN] Transaction operations:', transaction.operations.length)
-  } else {
-    console.log('📋 [ADMIN] FeeBump transaction detected')
-  }
-
-  // La transacción ya fue preparada en prepareApproveTransaction/prepareRejectTransaction
-  // y firmada por el admin. Solo necesitamos enviarla directamente.
-  console.log('📤 [ADMIN] Sending prepared and signed transaction to Soroban RPC...')
+  // La transacción ya fue preparada y firmada por el admin
   const response = await rpc.sendTransaction(transaction)
 
-  console.log('📋 [ADMIN] Response from RPC:', {
-    status: (response as any).status,
-    hash: (response as any).hash,
-    errorResultXdr: (response as any).errorResultXdr
-  })
-
   if ((response as any).hash) {
-    const txHash = (response as any).hash
-    console.log('✅ [ADMIN] Transaction submitted successfully, hash:', txHash)
-    return txHash
+    return (response as any).hash
   } else {
-    console.error('❌ [ADMIN] Transaction submission failed:', response)
     throw new Error(`Transaction submission failed: ${JSON.stringify(response)}`)
   }
 }

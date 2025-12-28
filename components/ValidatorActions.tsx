@@ -81,17 +81,12 @@ export default function ValidatorActions({
 
     try {
       // Paso 2: Firmar transacción con Freighter
-      console.log('🔐 Attempting to sign transaction with Freighter...')
       kit.setWallet('freighter')
       
       const result = await kit.signTransaction(txXdrToSign, {
         address: validatorWallet,
         networkPassphrase: 'Test SDF Network ; September 2015'
       })
-      
-      console.log('✅ Transaction signed by Freighter')
-      console.log('📋 Sign result type:', typeof result)
-      console.log('📋 Sign result:', result)
       
       // Freighter puede devolver el XDR de diferentes formas
       let signedTxXdr: string
@@ -123,11 +118,7 @@ export default function ValidatorActions({
         return
       }
 
-      console.log('📝 Signed XDR length:', signedTxXdr.length)
-      console.log('📝 Signed XDR preview:', signedTxXdr.substring(0, 50) + '...')
-
-      // Paso 3: Enviar transacción firmada al backend
-      console.log('📤 Sending signed transaction to backend...')
+      // Enviar transacción firmada al backend
       const res = await fetch(`/api/certificate/${certificate.id}/status/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -149,7 +140,6 @@ export default function ValidatorActions({
       }
 
       if (data.success) {
-        console.log('✅ Certificate status updated successfully')
         setPendingTxXdr(null)
         setPendingStatus(null)
         if (statusToUse === 'rejected') {

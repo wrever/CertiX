@@ -127,15 +127,6 @@ export default function UploadForm({ walletAddress }: UploadFormProps) {
         issuer: issuer || undefined
       }
 
-      console.log('📤 Sending sign request with:', {
-        certificateId: !!requestBody.certificateId,
-        signedTxXdr: !!requestBody.signedTxXdr,
-        walletAddress: !!requestBody.walletAddress,
-        hash: !!requestBody.hash,
-        fileUrl: !!requestBody.fileUrl,
-        title: !!requestBody.title
-      })
-
       const res = await fetch('/api/certificate/upload/sign', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

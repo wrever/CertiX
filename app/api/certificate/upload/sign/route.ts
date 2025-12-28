@@ -12,24 +12,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { certificateId, signedTxXdr, walletAddress, hash, fileUrl, title, issuer } = body
 
-    console.log('📝 Sign endpoint called with:', {
-      certificateId: !!certificateId,
-      signedTxXdr: !!signedTxXdr,
-      walletAddress: !!walletAddress,
-      hash: !!hash,
-      fileUrl: !!fileUrl,
-      title: !!title
-    })
-
     if (!certificateId || !signedTxXdr || !walletAddress || !hash || !fileUrl || !title) {
-      console.error('❌ Missing required fields:', {
-        certificateId: !certificateId,
-        signedTxXdr: !signedTxXdr,
-        walletAddress: !walletAddress,
-        hash: !hash,
-        fileUrl: !fileUrl,
-        title: !title
-      })
       return NextResponse.json(
         { success: false, error: 'Certificate ID, signed transaction XDR, wallet address, hash, fileUrl, and title are required' },
         { status: 400 }
@@ -53,7 +36,7 @@ export async function POST(request: NextRequest) {
     // Solo si el registro es exitoso, guardamos el certificado en la DB
     let contractTxHash: string
     try {
-      console.log('📝 Registering certificate in Smart Contract...')
+      // Registrando certificado en Smart Contract
       // Convertir hash a formato correcto (32 bytes = 64 hex chars)
       const fileHash = hash.length === 64 
         ? hash 
@@ -74,7 +57,7 @@ export async function POST(request: NextRequest) {
         ownerKeypair
       )
 
-      console.log('✅ Certificate registered in Smart Contract, tx:', contractTxHash)
+      // Certificado registrado en Smart Contract
     } catch (contractError: any) {
       console.error('❌ Error registering certificate in contract:', contractError)
       // NO guardar el certificado si falla el registro en el contrato
@@ -104,9 +87,7 @@ export async function POST(request: NextRequest) {
 
     // Guardar certificado SOLO después de que el registro en el contrato sea exitoso
     try {
-      console.log('💾 Saving certificate to DB...')
       await saveCertificate(certificate)
-      console.log('✅ Certificate saved successfully')
     } catch (dbError: any) {
       console.error('❌ Error saving certificate to DB:', dbError)
       return NextResponse.json(
@@ -124,8 +105,9 @@ export async function POST(request: NextRequest) {
       message: 'Transaction signed and submitted successfully'
     })
   } catch (error: any) {
-    console.error('❌ Error signing and submitting transaction:', error)
-    console.error('Error stack:', error.stack)
+    if (process.env.NODE_ENV === 'development') {
+      console.error('❌ Error signing and submitting transaction:', error)
+    }
     return NextResponse.json(
       { success: false, error: error.message || 'Error signing transaction' },
       { status: 500 }

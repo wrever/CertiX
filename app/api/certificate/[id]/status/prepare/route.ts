@@ -60,7 +60,7 @@ export async function POST(
     if (!certificate.contractId || !certificate.txHash) {
       // Intentar registrar el certificado en el contrato si falta
       try {
-        console.log('⚠️ Certificate not registered in contract, attempting to register now...')
+        // Certificado no registrado, intentando registrar
         
         // Convertir hash a formato correcto
         const fileHash = certificate.hash.length === 64 
@@ -88,7 +88,7 @@ export async function POST(
         certificate.contractId = CONTRACT_ID
         await saveCertificate(certificate)
         
-        console.log('✅ Certificate registered in contract, tx:', contractTxHash)
+        // Certificado registrado en contrato
       } catch (registerError: any) {
         console.error('❌ Error registering certificate in contract:', registerError)
         return NextResponse.json(
