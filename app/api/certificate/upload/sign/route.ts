@@ -48,7 +48,19 @@ export async function POST(request: NextRequest) {
         : Buffer.from(finalTxHash, 'hex').toString('hex').padStart(64, '0').substring(0, 64)
 
       // Obtener keypair del sistema para registrar (el usuario ya firmó la transacción original)
-      const ownerKeypair = Keypair.fromSecret(process.env.STELLAR_SECRET_KEY!)
+      // Validar que STELLAR_SECRET_KEY esté definida
+      if (!process.env.STELLAR_SECRET_KEY || process.env.STELLAR_SECRET_KEY === 'SD...' || process.env.STELLAR_SECRET_KEY.trim().length === 0) {
+        console.error('❌ STELLAR_SECRET_KEY no está configurada o es un placeholder')
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'STELLAR_SECRET_KEY environment variable is not set or is a placeholder. Please configure it in Vercel environment variables.' 
+          },
+          { status: 500 }
+        )
+      }
+      
+      const ownerKeypair = Keypair.fromSecret(process.env.STELLAR_SECRET_KEY)
 
       contractTxHash = await registerCertificateOnContract(
         fileHash,

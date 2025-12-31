@@ -51,8 +51,43 @@ export async function registerCertificateOnContract(
   ownerAddress: string,
   ownerKeypair: Keypair
 ): Promise<string> {
-  // Registrando certificado en contrato
+  // Validar variables de entorno críticas
+  if (!process.env.STELLAR_SECRET_KEY || process.env.STELLAR_SECRET_KEY === 'SD...' || process.env.STELLAR_SECRET_KEY.trim().length === 0) {
+    const errorMsg = 'STELLAR_SECRET_KEY environment variable is not set or is a placeholder. Please configure it in Vercel environment variables.'
+    console.error('❌ [SOROBAN]', errorMsg)
+    throw new Error(errorMsg)
+  }
+  
+  if (!CONTRACT_ID || CONTRACT_ID.length === 0) {
+    const errorMsg = 'SOROBAN_CONTRACT_ID environment variable is not set'
+    console.error('❌ [SOROBAN]', errorMsg)
+    throw new Error(errorMsg)
+  }
+  
+  // Validar parámetros de entrada
+  if (!fileHash || !txHash || !ownerAddress) {
+    const errorMsg = 'Missing required parameters: fileHash, txHash, and ownerAddress are required'
+    console.error('❌ [SOROBAN]', errorMsg, { fileHash: !!fileHash, txHash: !!txHash, ownerAddress: !!ownerAddress })
+    throw new Error(errorMsg)
+  }
+  
+  // Validar formato de ownerAddress (debe ser una dirección Stellar válida)
+  if (!ownerAddress.startsWith('G') || ownerAddress.length !== 56) {
+    const errorMsg = `Invalid owner address format: ${ownerAddress} (expected G... with 56 chars)`
+    console.error('❌ [SOROBAN]', errorMsg)
+    throw new Error(errorMsg)
+  }
+  
+  // Log de configuración (sin exponer secretos)
+  console.log('🔍 [SOROBAN] Configuración:', {
+    hasSecretKey: !!process.env.STELLAR_SECRET_KEY,
+    contractId: CONTRACT_ID.substring(0, 8) + '...',
+    horizonUrl: HORIZON_URL,
+    sorobanRpcUrl: SOROBAN_RPC_URL,
+    ownerAddress: ownerAddress.substring(0, 8) + '...'
+  })
 
+  // Registrando certificado en contrato
   const contract = new Contract(CONTRACT_ID)
   const server = new Horizon.Server(HORIZON_URL)
   
@@ -136,10 +171,19 @@ export async function registerCertificateOnContract(
   // Cargar cuenta del owner
   let sourceAccount
   try {
-    sourceAccount = await server.loadAccount(ownerKeypair.publicKey())
+    const publicKey = ownerKeypair.publicKey()
+    console.log('🔍 [SOROBAN] Cargando cuenta:', publicKey.substring(0, 8) + '...')
+    sourceAccount = await server.loadAccount(publicKey)
+    console.log('✅ [SOROBAN] Cuenta cargada correctamente')
   } catch (e: any) {
     console.error('❌ Error loading source account:', e)
-    throw new Error(`Error loading account: ${e.message}`)
+    console.error('❌ Error details:', {
+      message: e.message,
+      name: e.name,
+      publicKey: ownerKeypair.publicKey(),
+      hasSecretKey: !!process.env.STELLAR_SECRET_KEY
+    })
+    throw new Error(`Error loading account: ${e.message}. Make sure STELLAR_SECRET_KEY is correctly configured in Vercel.`)
   }
   
   // Crear transacción SIN firmar todavía
