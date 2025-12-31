@@ -9,4 +9,3 @@ export async function initializeSystem() {
     console.error('❌ Error al inicializar sistema:', error)
   }
 }
-

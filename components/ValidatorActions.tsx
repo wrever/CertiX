@@ -210,26 +210,17 @@ export default function ValidatorActions({
   }
 
   return (
-    <div className="mt-6 p-6 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl border-2 border-purple-200 animate-fade-in">
-      <div className="flex items-center space-x-3 mb-4">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center shadow-lg">
-          <span className="text-xl">🛡️</span>
-        </div>
-        <div>
-          <h3 className="font-bold text-gray-900">Acciones de Admin</h3>
-          <p className="text-sm text-gray-600">Aprobar o rechazar este certificado</p>
-        </div>
-      </div>
-
+    <>
       {error && (
-        <div className="mb-4 p-4 bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 rounded-xl animate-scale-in">
-          <div className="flex items-start space-x-3">
-            <span className="text-xl">❌</span>
-            <p className="text-sm text-red-700 font-medium">{error}</p>
+        <div className="mb-3 p-3 glass-card border-2 border-red-500/50 rounded-xl animate-scale-in bg-red-500/10">
+          <div className="flex items-start space-x-2">
+            <span className="text-lg">❌</span>
+            <p className="text-xs text-red-300 font-medium">{error}</p>
           </div>
         </div>
       )}
-
+      
+      {/* Botones de acción integrados directamente en el card */}
       <div className="flex flex-col sm:flex-row gap-3">
         <button
           onClick={handleApprove}
@@ -265,16 +256,17 @@ export default function ValidatorActions({
         </button>
       </div>
 
+      {/* Modal fullscreen para rechazo */}
       {showRejectModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="glass rounded-3xl p-8 max-w-md w-full shadow-2xl animate-scale-in">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[9999] p-4 animate-fade-in">
+          <div className="glass-card rounded-3xl p-8 max-w-md w-full shadow-2xl animate-scale-in border border-cyan-500/30">
             <div className="flex items-center space-x-3 mb-6">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-rose-500 flex items-center justify-center shadow-lg">
                 <span className="text-2xl">❌</span>
               </div>
               <div>
-                <h3 className="text-xl font-bold text-gray-900">Rechazar Certificado</h3>
-                <p className="text-sm text-gray-600">Proporciona una razón para el rechazo</p>
+                <h3 className="text-xl font-bold text-white">Rechazar Certificado</h3>
+                <p className="text-sm text-cyan-200/70">Proporciona una razón para el rechazo</p>
               </div>
             </div>
             
@@ -282,7 +274,7 @@ export default function ValidatorActions({
               value={rejectionReason}
               onChange={(e) => setRejectionReason(e.target.value)}
               placeholder="Ej: El certificado no cumple con los requisitos establecidos, información incompleta, etc."
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl mb-6 focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all duration-200 resize-none"
+              className="w-full px-4 py-3 glass-card border-2 border-cyan-500/30 rounded-xl mb-6 focus:border-red-500 focus:ring-2 focus:ring-red-500/50 transition-all duration-200 resize-none text-white placeholder:text-cyan-200/40 bg-[#0a2d4a]/50"
               rows={4}
             />
             
@@ -293,7 +285,7 @@ export default function ValidatorActions({
                   setRejectionReason('')
                   setError(null)
                 }}
-                className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-all duration-200"
+                className="flex-1 px-6 py-3 glass-card border border-cyan-500/30 text-cyan-200 rounded-xl font-semibold hover:bg-cyan-500/20 transition-all duration-200"
               >
                 Cancelar
               </button>
@@ -320,6 +312,6 @@ export default function ValidatorActions({
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }

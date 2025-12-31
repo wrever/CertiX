@@ -116,9 +116,9 @@ export async function getCertificatesByStatus(status: CertificateStatus): Promis
   
   // Eliminar duplicados usando Set
   const uniqueIds = Array.from(new Set(certIds))
-  
+
   const certificates = await Promise.all(
-    uniqueIds.map(id => getCertificate(id))
+    uniqueIds.map((id: string) => getCertificate(id))
   )
   return certificates.filter(Boolean) as Certificate[]
 }

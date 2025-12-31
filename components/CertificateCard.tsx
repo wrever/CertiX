@@ -2,11 +2,13 @@ import Link from 'next/link'
 import { Certificate } from '@/types/certificate'
 import VerifyBadge from './VerifyBadge'
 import CertificateStatusBadge from './CertificateStatusBadge'
+import ValidatorActions from './ValidatorActions'
 
 interface CertificateCardProps {
   certificate: Certificate
   showWallet?: boolean
   showValidatorActions?: boolean
+  validatorWallet?: string
   onStatusChange?: () => void
 }
 
@@ -14,6 +16,7 @@ export default function CertificateCard({
   certificate, 
   showWallet = false,
   showValidatorActions = false,
+  validatorWallet,
   onStatusChange
 }: CertificateCardProps) {
   const statusColors = {
@@ -113,14 +116,25 @@ export default function CertificateCard({
 
       {/* Validator Notice */}
       {showValidatorActions && certificate.status === 'pending' && (
-        <div className={`mb-6 p-4 rounded-xl border-2 ${statusGradients.pending}`}>
+        <div className={`mb-4 p-3 rounded-xl border-2 ${statusGradients.pending}`}>
           <div className="flex items-start space-x-3">
-            <span className="text-2xl">⏳</span>
+            <span className="text-xl">⏳</span>
             <div>
               <p className="font-semibold text-yellow-300 mb-1">Pendiente de revisión</p>
               <p className="text-sm text-yellow-200/70">Este certificado está esperando tu aprobación o rechazo.</p>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Validator Actions - Botones integrados directamente */}
+      {showValidatorActions && validatorWallet && certificate.status === 'pending' && (
+        <div className="mb-4">
+          <ValidatorActions
+            certificate={certificate}
+            validatorWallet={validatorWallet}
+            onStatusChange={onStatusChange || (() => {})}
+          />
         </div>
       )}
 

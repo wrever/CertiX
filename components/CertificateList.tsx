@@ -33,17 +33,9 @@ export default function CertificateList({
             certificate={cert}
             showWallet={showWallet}
             showValidatorActions={showValidatorActions}
+            validatorWallet={validatorWallet}
             onStatusChange={onStatusChange}
           />
-          {showValidatorActions && validatorWallet && cert.status === 'pending' && (
-            <div className="mt-4 -mt-2">
-              <ValidatorActions
-                certificate={cert}
-                validatorWallet={validatorWallet}
-                onStatusChange={onStatusChange || (() => {})}
-              />
-            </div>
-          )}
         </div>
       ))}
     </div>

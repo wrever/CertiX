@@ -6,7 +6,7 @@ import {
   TransactionBuilder,
   Keypair,
   Address as StellarAddress,
-  SorobanRpc
+  rpc
 } from '@stellar/stellar-sdk'
 
 const CONTRACT_ID = process.env.SOROBAN_CONTRACT_ID || 'CBAEDSXVAUIT3M7JOW3ASF6POMVNMYXDWBJ45JUWXN6GGNHVLLM52VJP'
@@ -55,7 +55,9 @@ export async function registerCertificateOnContract(
 
   const contract = new Contract(CONTRACT_ID)
   const server = new Horizon.Server(HORIZON_URL)
-  const rpc = new SorobanRpc.Server(SOROBAN_RPC_URL)
+  
+  // En SDK 14.x, usar rpc.Server directamente
+  const rpcServer = new rpc.Server(SOROBAN_RPC_URL)
   
   // Convertir hashes a Buffer (32 bytes = 64 hex chars)
   let fileHashBytes: Buffer
@@ -84,29 +86,50 @@ export async function registerCertificateOnContract(
     throw new Error(`Invalid hash format: ${e.message}`)
   }
   
-  // Convertir Address a ScVal usando la función helper
-  let ownerScVal: xdr.ScVal
-  try {
-    ownerScVal = addressToScVal(ownerAddress)
-    // Owner address convertido a ScVal
-  } catch (e: any) {
-    console.error('❌ Error converting owner address:', e)
-    throw new Error(`Invalid owner address: ${e.message}`)
-  }
-  
   // Crear operación para invocar el contrato
   let operation
   try {
+    // Según DeepWiki: El SDK 11.2.2 requiere ScVal explícitamente, no convierte tipos nativos automáticamente
+    // El contrato espera: register_certificate(owner: Address, file_hash: BytesN<32>, tx_hash: BytesN<32>)
+    
+    // Crear los ScVal para los parámetros
+    // IMPORTANTE: Usar addressToScVal() que usa Address.toScVal() internamente
+    // NO usar xdr.ScVal.scvAddress() directamente porque espera xdr.ScAddress, no Address
+    const ownerAddressScVal = addressToScVal(ownerAddress)
+    const fileHashScVal = bufferToScVal(fileHashBytes)
+    const txHashScVal = bufferToScVal(txHashBytes)
+    
+    // Verificar que los ScVal están correctamente formateados
+    console.log('🔍 [SOROBAN] Creando operación con parámetros:', {
+      ownerType: ownerAddressScVal.switch().name,
+      ownerValue: ownerAddress,
+      fileHashType: fileHashScVal.switch().name,
+      fileHashHex: fileHashBytes.toString('hex').substring(0, 16) + '...',
+      txHashType: txHashScVal.switch().name,
+      txHashHex: txHashBytes.toString('hex').substring(0, 16) + '...',
+      fileHashLength: fileHashBytes.length,
+      txHashLength: txHashBytes.length
+    })
+    
     // Crear operación de llamada al contrato
     operation = contract.call(
       'register_certificate',
-      ownerScVal,
-      bufferToScVal(fileHashBytes),
-      bufferToScVal(txHashBytes)
+      ownerAddressScVal,
+      fileHashScVal,
+      txHashScVal
     )
+    
+    console.log('✅ [SOROBAN] Operación creada correctamente')
   } catch (e: any) {
     console.error('❌ Error creating contract call:', e)
     console.error('Error stack:', e.stack)
+    console.error('Error details:', {
+      message: e.message,
+      name: e.name,
+      ownerAddress,
+      fileHashLength: fileHashBytes?.length,
+      txHashLength: txHashBytes?.length
+    })
     throw new Error(`Error creating contract call: ${e.message}`)
   }
   
@@ -139,25 +162,70 @@ export async function registerCertificateOnContract(
   // Para transacciones Soroban, necesitamos preparar la transacción usando el RPC
   // ANTES de firmarla
   try {
-    // Simular la transacción para obtener el fee correcto
-    const simulation = await rpc.simulateTransaction(transaction)
+    // Intentar simular primero para verificar errores del contrato
+    let simulation
+    let simulationSucceeded = false
     
-    if (SorobanRpc.Api.isSimulationError(simulation)) {
-      const errorStr = JSON.stringify(simulation)
-      if (errorStr.includes('already registered') || errorStr.includes('Certificate already')) {
-        throw new Error('Certificate already registered in the Smart Contract')
+    try {
+      simulation = await rpcServer.simulateTransaction(transaction)
+      simulationSucceeded = true
+      
+      // En SDK 14.x, usar rpc.Api.isSimulationError para verificar errores
+      if (rpc.Api.isSimulationError(simulation)) {
+        const errorStr = JSON.stringify(simulation)
+        if (errorStr.includes('already registered') || errorStr.includes('Certificate already')) {
+          throw new Error('Certificate already registered in the Smart Contract')
+        }
+        throw new Error(`Transaction simulation failed: ${errorStr.substring(0, 200)}`)
       }
-      throw new Error(`Transaction simulation failed: ${errorStr.substring(0, 200)}`)
+    } catch (simError: any) {
+      console.error('❌ [SOROBAN] Error en simulateTransaction:', simError)
+      console.error('❌ [SOROBAN] Error message:', simError.message)
+      
+      // Si el error es "Bad union switch" - problema de serialización XDR en el SDK
+      // En SDK 14.x, prepareTransaction puede manejar esto mejor
+      if (simError.message && simError.message.includes('Bad union switch')) {
+        console.log('⚠️ [SOROBAN] Bad union switch detectado, intentando prepareTransaction directamente...')
+        try {
+          // Intentar preparar directamente - prepareTransaction puede manejar la serialización mejor
+          transaction = await rpcServer.prepareTransaction(transaction)
+          console.log('✅ [SOROBAN] prepareTransaction exitoso sin simulación previa')
+          // Continuar con el flujo normal
+        } catch (prepareError: any) {
+          console.error('❌ [SOROBAN] Error también en prepareTransaction:', prepareError)
+          throw new Error(
+            'Error al procesar la transacción de Soroban. ' +
+            'El SDK no puede serializar correctamente la transacción. ' +
+            'Esto puede deberse a un problema de compatibilidad entre la versión del SDK (14.4.3) y el RPC. ' +
+            `Error técnico: ${prepareError.message || simError.message}`
+          )
+        }
+      } else {
+        // Si el error es "encoded argument must be of type String"
+        if (simError.message && simError.message.includes('encoded argument must be of type String')) {
+          throw new Error(
+            'Error al codificar los argumentos del contrato. ' +
+            'El SDK espera un formato específico para los argumentos. ' +
+            'Verifica que los hashes sean hexadecimales válidos de 64 caracteres y que el owner address sea válido. ' +
+            `Error técnico: ${simError.message}`
+          )
+        }
+        
+        // Re-lanzar otros errores
+        throw simError
+      }
     }
     
-    // Preparar la transacción con el fee correcto
-    transaction = await rpc.prepareTransaction(transaction)
+    // Si la simulación fue exitosa, preparar la transacción con el fee correcto
+    if (simulationSucceeded) {
+      transaction = await rpcServer.prepareTransaction(transaction)
+    }
     
     // Firmar la transacción preparada
     transaction.sign(ownerKeypair)
     
     // Enviar transacción firmada
-    const response = await rpc.sendTransaction(transaction)
+    const response = await rpcServer.sendTransaction(transaction)
     
     // Verificar si la transacción fue exitosa
     if ((response as any).hash) {
@@ -296,7 +364,7 @@ export async function getCertificateFromContract(fileHash: string): Promise<{
   rejection_reason?: string
 }> {
   const contract = new Contract(CONTRACT_ID)
-  const rpc = new SorobanRpc.Server(SOROBAN_RPC_URL)
+  const rpcServer = new rpc.Server(SOROBAN_RPC_URL)
   const server = new Horizon.Server(HORIZON_URL)
 
   // Convertir fileHash a Buffer (32 bytes = 64 hex chars)
@@ -336,9 +404,9 @@ export async function getCertificateFromContract(fileHash: string): Promise<{
       .build()
 
     // Simular la transacción para obtener el resultado (no se envía a la blockchain)
-    const simulation = await rpc.simulateTransaction(transaction)
+    const simulation = await rpcServer.simulateTransaction(transaction)
 
-    if (SorobanRpc.Api.isSimulationError(simulation)) {
+    if (rpc.Api.isSimulationError(simulation)) {
       throw new Error(`Simulation error: ${JSON.stringify(simulation)}`)
     }
 
@@ -407,7 +475,7 @@ export async function getCertificateFromContract(fileHash: string): Promise<{
  */
 export async function isCertificateApproved(fileHash: string): Promise<boolean> {
   const contract = new Contract(CONTRACT_ID)
-  const rpc = new SorobanRpc.Server(SOROBAN_RPC_URL)
+  const rpcServer = new rpc.Server(SOROBAN_RPC_URL)
   const server = new Horizon.Server(HORIZON_URL)
 
   // Convertir fileHash a Buffer (32 bytes = 64 hex chars)
@@ -447,9 +515,9 @@ export async function isCertificateApproved(fileHash: string): Promise<boolean> 
       .build()
 
     // Simular la transacción para obtener el resultado (no se envía a la blockchain)
-    const simulation = await rpc.simulateTransaction(transaction)
+    const simulation = await rpcServer.simulateTransaction(transaction)
 
-    if (SorobanRpc.Api.isSimulationError(simulation)) {
+    if (rpc.Api.isSimulationError(simulation)) {
       console.error('Simulation error:', simulation)
       return false
     }

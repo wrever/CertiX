@@ -9,4 +9,3 @@ export function generateShortHash(fileBuffer: Buffer): string {
   const fullHash = generateHash(fileBuffer)
   return fullHash.substring(0, 28)
 }
-

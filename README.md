@@ -19,7 +19,7 @@
 
 ## 📋 Descripción
 
-**CertiX** es una plataforma descentralizada para la emisión, validación y verificación de certificaciones digitales utilizando la blockchain de Stellar y Smart Contracts Soroban. Cada certificado queda registrado de forma **inmutable** y puede ser verificado públicamente por cualquier persona sin necesidad de permisos especiales.
+**CertiX** es una plataforma descentralizada para la emisión, validación y verificación de certificaciones digitales utilizando la blockchain de Stellar y **Smart Contracts Soroban**. Cada certificado queda registrado de forma **inmutable** y puede ser verificado públicamente por cualquier persona sin necesidad de permisos especiales.
 
 ### 🎯 Problema que Resuelve
 
@@ -30,10 +30,129 @@
 
 ### ✅ Solución de CertiX
 
+- **Smart Contracts Soroban**: El corazón del sistema - gestión inmutable de estados en blockchain
 - **Inmutabilidad blockchain**: Hash SHA256 registrado permanentemente en Stellar
-- **Smart Contracts**: Estados de validación gestionados por contratos inteligentes
 - **Verificación pública**: Cualquiera puede verificar la autenticidad sin permisos
 - **Descentralización**: No depende de un servidor central único
+
+---
+
+## 📜 Smart Contract Soroban - El Corazón de CertiX
+
+### ⭐ ¿Por qué el Smart Contract es lo más importante?
+
+El **Smart Contract Soroban** es el componente central de CertiX. Es donde se almacenan de forma **inmutable** todos los estados de los certificados (Pending, Approved, Rejected) directamente en la blockchain de Stellar. Esto garantiza que:
+
+- ✅ **Inmutabilidad total**: Los estados no pueden ser modificados una vez registrados
+- ✅ **Transparencia**: Cualquiera puede verificar el estado de un certificado consultando el contrato
+- ✅ **Descentralización**: No depende de servidores centrales ni bases de datos tradicionales
+- ✅ **Confianza**: La lógica del contrato es pública y verificable
+
+### 🔗 Contrato Desplegado
+
+**Testnet:**
+```
+ID: CBAEDSXVAUIT3M7JOW3ASF6POMVNMYXDWBJ45JUWXN6GGNHVLLM52VJP
+```
+
+**Explorador:**
+- [Ver en Stellar Expert](https://stellar.expert/explorer/testnet/contract/CBAEDSXVAUIT3M7JOW3ASF6POMVNMYXDWBJ45JUWXN6GGNHVLLM52VJP)
+
+### 🔧 Funciones del Smart Contract
+
+El contrato implementa las siguientes funciones principales:
+
+#### 1. `register_certificate(file_hash, tx_hash, owner)`
+Registra un nuevo certificado en el contrato con estado inicial `Pending`.
+
+**Parámetros:**
+- `file_hash`: Hash SHA256 del archivo (32 bytes)
+- `tx_hash`: Hash de la transacción Stellar firmada (prueba de autenticidad)
+- `owner`: Dirección de la wallet del propietario
+
+**Estado inicial:** `Pending`
+
+#### 2. `approve_certificate(file_hash, admin)`
+Aprueba un certificado pendiente. Solo puede ser llamado por el admin del contrato.
+
+**Parámetros:**
+- `file_hash`: Hash del certificado a aprobar
+- `admin`: Dirección de la wallet admin (debe ser el admin configurado)
+
+**Resultado:** Estado cambia a `Approved`
+
+#### 3. `reject_certificate(file_hash, admin, reason)`
+Rechaza un certificado pendiente. Solo puede ser llamado por el admin del contrato.
+
+**Parámetros:**
+- `file_hash`: Hash del certificado a rechazar
+- `admin`: Dirección de la wallet admin
+- `reason`: Razón del rechazo (opcional)
+
+**Resultado:** Estado cambia a `Rejected`
+
+#### 4. `get_certificate(file_hash)`
+Obtiene todos los datos de un certificado desde el contrato.
+
+**Retorna:**
+- Estado actual (Pending/Approved/Rejected)
+- Wallet del propietario
+- Hash de la transacción
+- Admin que validó (si aplica)
+- Fecha de validación (si aplica)
+- Razón de rechazo (si aplica)
+
+#### 5. `is_approved(file_hash)`
+Verifica rápidamente si un certificado está aprobado.
+
+**Retorna:** `true` si está aprobado, `false` en caso contrario
+
+### 🔄 Flujo Completo con Smart Contract
+
+```
+1. Usuario sube certificado
+   ↓
+2. Backend genera hash SHA256 del archivo
+   ↓
+3. Usuario firma transacción Stellar con hash (prueba de autenticidad)
+   ↓
+4. Backend registra en Smart Contract:
+   - register_certificate(file_hash, tx_hash, owner)
+   - Estado: Pending
+   ↓
+5. Admin revisa certificado en /validator/dashboard
+   ↓
+6. Admin aprueba/rechaza:
+   - approve_certificate(file_hash, admin) O
+   - reject_certificate(file_hash, admin, reason)
+   ↓
+7. Estado actualizado en Smart Contract (inmutable)
+   ↓
+8. Cualquiera puede verificar consultando el contrato
+```
+
+### 📍 Ubicación del Código del Contrato
+
+El código fuente del Smart Contract está en:
+```
+contract/contracts/certix-contract/src/lib.rs
+```
+
+**Lenguaje:** Rust (Soroban SDK)
+
+### 🔐 Configuración del Admin
+
+El admin del Smart Contract se configura al inicializar el contrato. Solo esta wallet puede:
+- Aprobar certificados
+- Rechazar certificados
+
+La wallet admin se verifica en cada operación de aprobación/rechazo.
+
+### 📚 Documentación Adicional
+
+- [Flujo Completo del Smart Contract](docs/FLUJO_COMPLETO_SMART_CONTRACT.md)
+- [Cómo ser Admin](docs/COMO_SER_ADMIN.md)
+- [Cómo usar Wallet Admin](docs/COMO_USAR_WALLET_ADMIN.md)
 
 ---
 
@@ -41,10 +160,10 @@
 
 ### 🔐 Seguridad y Autenticidad
 
+- **Smart Contract Soroban**: Estados de validación gestionados de forma inmutable en blockchain
 - **Hash SHA256 inmutable**: Cada certificado genera un hash único que se registra en blockchain
 - **Firma de transacciones**: El usuario firma con su wallet Stellar como prueba de autenticidad
-- **Smart Contract Soroban**: Estados de validación gestionados por contratos inteligentes
-- **Verificación blockchain**: Comparación automática con transacciones en Stellar
+- **Verificación blockchain**: Comparación automática con transacciones en Stellar y consulta al Smart Contract
 
 ### 🎨 Experiencia de Usuario
 
@@ -84,12 +203,12 @@
        │
        ▼
 ┌─────────────────┐     ┌──────────────┐     ┌─────────────┐
-│  Sube Archivo    │────▶│  Genera Hash │────▶│  Firma TX   │
+│  Sube Archivo    │────▶  Genera Hash │────▶  Firma TX   │
 └─────────────────┘     └──────────────┘     └──────┬──────┘
                                                       │
                                                       ▼
 ┌─────────────────┐     ┌──────────────┐     ┌─────────────┐
-│  Smart Contract │◀────│  Registra en │◀────│  Envía TX  │
+│  Smart Contract ◀────│  Registra en ◀────│  Envía TX    │
 │    (Soroban)    │     │  Blockchain  │     │  a Stellar  │
 └────────┬────────┘     └──────────────┘     └─────────────┘
          │
@@ -100,7 +219,7 @@
          │
          ▼
 ┌─────────────────┐     ┌──────────────┐
-│ Admin Aprueba/  │────▶│ Actualiza en │
+│ Admin Aprueba/  │────▶ Actualiza en │
 │   Rechaza       │     │  Smart Cont. │
 └─────────────────┘     └──────────────┘
 ```
@@ -399,26 +518,7 @@ GET /api/admin/check?wallet=G...
 
 ---
 
-## 🔗 Smart Contract Integration
-
-CertiX utiliza **Smart Contracts Soroban** para gestionar los estados de los certificados de forma inmutable.
-
-### Funciones del Contrato
-
-- `register_certificate(file_hash, tx_hash, owner)` - Registrar nuevo certificado
-- `approve_certificate(file_hash, admin)` - Aprobar certificado (solo admin)
-- `reject_certificate(file_hash, admin, reason)` - Rechazar certificado (solo admin)
-- `get_certificate(file_hash)` - Obtener datos del certificado
-- `is_approved(file_hash)` - Verificar si está aprobado
-
-### Flujo con Smart Contract
-
-1. **Registro**: Usuario sube certificado → Se registra en contrato (estado: `pending`)
-2. **Validación**: Admin aprueba/rechaza → Estado actualizado en contrato
-3. **Sincronización**: Redis se sincroniza con el contrato para queries rápidas
-4. **Verificación**: Cualquiera puede verificar el estado desde el contrato
-
-> 📚 **Documentación completa**: Ver `docs/FLUJO_COMPLETO_SMART_CONTRACT.md`
+> 💡 **Nota**: Para más detalles sobre el Smart Contract, consulta la sección [Smart Contract Soroban - El Corazón de CertiX](#-smart-contract-soroban---el-corazón-de-certix) al inicio del README.
 
 ---
 

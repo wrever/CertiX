@@ -11,7 +11,7 @@ import {
   Horizon, 
   TransactionBuilder,
   Address as StellarAddress,
-  SorobanRpc
+  rpc
 } from '@stellar/stellar-sdk'
 
 const CONTRACT_ID = process.env.SOROBAN_CONTRACT_ID || 'CBAEDSXVAUIT3M7JOW3ASF6POMVNMYXDWBJ45JUWXN6GGNHVLLM52VJP'
@@ -52,7 +52,8 @@ export async function prepareApproveTransaction(
 
   const contract = new Contract(CONTRACT_ID)
   const server = new Horizon.Server(HORIZON_URL)
-  const rpc = new SorobanRpc.Server(SOROBAN_RPC_URL)
+  // En SDK 14.x, usar rpc.Server directamente
+  const rpcServer = new rpc.Server(SOROBAN_RPC_URL)
 
   // Convertir fileHash a Buffer (32 bytes = 64 hex chars)
   let fileHashBytes: Buffer
@@ -90,14 +91,14 @@ export async function prepareApproveTransaction(
     .build()
 
   // Preparar la transacción con Soroban RPC ANTES de que el admin la firme
-  const simulation = await rpc.simulateTransaction(transaction)
+  const simulation = await rpcServer.simulateTransaction(transaction)
 
-  if (SorobanRpc.Api.isSimulationError(simulation)) {
+  if (rpc.Api.isSimulationError(simulation)) {
     throw new Error(`Transaction simulation failed: ${JSON.stringify(simulation)}`)
   }
 
   // Preparar la transacción (esto actualiza el fee y otros parámetros)
-  transaction = await rpc.prepareTransaction(transaction)
+  transaction = await rpcServer.prepareTransaction(transaction)
 
   // NO firmar - devolver XDR para que el admin firme
   const txXdr = transaction.toXDR()
@@ -119,7 +120,8 @@ export async function prepareRejectTransaction(
 
   const contract = new Contract(CONTRACT_ID)
   const server = new Horizon.Server(HORIZON_URL)
-  const rpc = new SorobanRpc.Server(SOROBAN_RPC_URL)
+  // En SDK 14.x, usar rpc.Server directamente
+  const rpcServer = new rpc.Server(SOROBAN_RPC_URL)
 
   // Convertir fileHash a Buffer (32 bytes = 64 hex chars)
   let fileHashBytes: Buffer
@@ -158,14 +160,14 @@ export async function prepareRejectTransaction(
     .build()
 
   // Preparar la transacción con Soroban RPC ANTES de que el admin la firme
-  const simulation = await rpc.simulateTransaction(transaction)
+  const simulation = await rpcServer.simulateTransaction(transaction)
 
-  if (SorobanRpc.Api.isSimulationError(simulation)) {
+  if (rpc.Api.isSimulationError(simulation)) {
     throw new Error(`Transaction simulation failed: ${JSON.stringify(simulation)}`)
   }
 
   // Preparar la transacción (esto actualiza el fee y otros parámetros)
-  transaction = await rpc.prepareTransaction(transaction)
+  transaction = await rpcServer.prepareTransaction(transaction)
 
   // NO firmar - devolver XDR para que el admin firme
   const txXdr = transaction.toXDR()
@@ -181,13 +183,14 @@ export async function prepareRejectTransaction(
 export async function submitAdminTransaction(
   signedTxXdr: string
 ): Promise<string> {
-  const rpc = new SorobanRpc.Server(SOROBAN_RPC_URL)
+  // En SDK 14.x, usar rpc.Server directamente
+  const rpcServer = new rpc.Server(SOROBAN_RPC_URL)
 
   // Reconstruir la transacción desde el XDR firmado
   const transaction = TransactionBuilder.fromXDR(signedTxXdr, NETWORK_PASSPHRASE)
 
   // La transacción ya fue preparada y firmada por el admin
-  const response = await rpc.sendTransaction(transaction)
+  const response = await rpcServer.sendTransaction(transaction)
 
   if ((response as any).hash) {
     return (response as any).hash
